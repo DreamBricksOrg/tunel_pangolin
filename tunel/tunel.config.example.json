@@ -1,0 +1,7 @@
+{
+  "id": "ID_DO_SITE_DESTE_PC",
+  "secret": "SECRET_DO_SITE_DESTE_PC",
+  "endpoint": "https://pangolin.seudominio.com",
+  "domain": "seudominio.com",
+  "pangolin": "pangolin"
+}

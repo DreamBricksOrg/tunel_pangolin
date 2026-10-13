@@ -1,0 +1,13 @@
+# Segredos - nunca versionar
+.ssh/
+pangolin-credentials/
+tunel/tunel.config.json
+*.key
+*.pem
+
+# Gerados em runtime
+pangolin/config/db/
+pangolin/config/letsencrypt/
+pangolin/config/key
+pangolin/config/traefik/logs/
+*.tmp
