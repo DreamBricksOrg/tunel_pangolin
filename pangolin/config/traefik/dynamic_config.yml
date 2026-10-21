@@ -10,7 +10,7 @@ http:
 
   routers:
     main-app-router-redirect:
-      rule: "Host(`pangolin.juliobalbino.com.br`)"
+      rule: "Host(`pangolin.dbpe.com.br`)"
       service: next-service
       entryPoints:
         - web
@@ -19,7 +19,7 @@ http:
         - badger
 
     next-router:
-      rule: "Host(`pangolin.juliobalbino.com.br`) && !PathPrefix(`/api/v1`)"
+      rule: "Host(`pangolin.dbpe.com.br`) && !PathPrefix(`/api/v1`)"
       service: next-service
       entryPoints:
         - websecure
@@ -29,7 +29,7 @@ http:
         certResolver: letsencrypt
 
     api-router:
-      rule: "Host(`pangolin.juliobalbino.com.br`) && PathPrefix(`/api/v1`)"
+      rule: "Host(`pangolin.dbpe.com.br`) && PathPrefix(`/api/v1`)"
       service: api-service
       entryPoints:
         - websecure
@@ -39,7 +39,7 @@ http:
         certResolver: letsencrypt
 
     ws-router:
-      rule: "Host(`pangolin.juliobalbino.com.br`)"
+      rule: "Host(`pangolin.dbpe.com.br`)"
       service: api-service
       entryPoints:
         - websecure

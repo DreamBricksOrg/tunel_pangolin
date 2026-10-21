@@ -1,21 +1,21 @@
 gerbil:
     start_port: 51820
-    base_endpoint: "pangolin.juliobalbino.com.br"
+    base_endpoint: "pangolin.dbpe.com.br"
 
 app:
-    dashboard_url: "https://pangolin.juliobalbino.com.br"
+    dashboard_url: "https://pangolin.dbpe.com.br"
     log_level: "info"
     telemetry:
         anonymous_usage: true
 
 domains:
     domain1:
-        base_domain: "juliobalbino.com.br"
+        base_domain: "dbpe.com.br"
 
 server:
     secret: "__SECRET__"
     cors:
-        origins: ["https://pangolin.juliobalbino.com.br"]
+        origins: ["https://pangolin.dbpe.com.br"]
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
         allowed_headers: ["X-CSRF-Token", "Content-Type"]
         credentials: false

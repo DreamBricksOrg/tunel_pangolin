@@ -6,10 +6,12 @@ Objetivo: em qualquer PC (Windows, Ubuntu ou Fedora), rodar
 tunel 8001 meuapp
 ```
 
-e ter `https://meuapp.juliobalbino.com.br` → `http://localhost:8001` daquele PC, público e com HTTPS.
+e ter `https://meuapp.dbpe.com.br` → `http://localhost:8001` daquele PC, público e com HTTPS.
 
-> **Regra de ouro:** cada computador é **um site** no Pangolin, com ID e Secret próprios.
-> Nunca reutilize o `tunel.config.json` de outro PC.
+> **Regra de ouro:** cada computador é **um site** em cada servidor Pangolin, com ID e Secret
+> próprios. O ID e o Secret **só valem no servidor onde o site foi criado**; nunca reutilize o
+> `tunel.config.json` de outro PC. Para usar mais de um servidor/domínio no mesmo PC, veja a
+> [seção 5](#5-usar-mais-de-um-servidor-perfis). O servidor padrão desta instalação é `dbpe.com.br`.
 
 Nenhuma porta precisa ser aberta no PC nem no roteador: a conexão é só de saída.
 
@@ -17,12 +19,15 @@ Nenhuma porta precisa ser aberta no PC nem no roteador: a conexão é só de sa�
 
 ## 1. Criar o site no painel (uma vez por PC — igual para todos os sistemas)
 
-1. Acesse https://pangolin.juliobalbino.com.br e faça login.
+1. Acesse o painel **do servidor que você vai usar** (padrão: https://pangolin.dbpe.com.br) e
+   faça login.
 2. **Sites → Add Site**
    - Tipo: **Pangolin Site (Recommended)**
    - Name: o nome do PC (ex.: `notebook`, `pc-trabalho`, `fedora-casa`)
 3. Copie o **ID** e o **Secret** — o Secret só aparece nessa tela.
-4. Clique em **Create Site**. Não precisa rodar o comando que o painel mostra nem criar nada em
+4. Clique em **Create Site** e confirme que o site apareceu na lista de **Sites**. Se o site não
+   existir nesse painel, o `tunel` não conecta (erro `No newt found with that newtId`) e os links
+   dão 404. Não precisa rodar o comando que o painel mostra nem criar nada em
    **Resources** — o script `tunel` faz isso.
 
 ## 2. Arquivo de configuração (igual para todos os sistemas)
@@ -34,8 +39,8 @@ nessa pasta com os dados **deste PC**:
 {
   "id": "ID_DO_SITE_DESTE_PC",
   "secret": "SECRET_DO_SITE_DESTE_PC",
-  "endpoint": "https://pangolin.juliobalbino.com.br",
-  "domain": "juliobalbino.com.br",
+  "endpoint": "https://pangolin.dbpe.com.br",
+  "domain": "dbpe.com.br",
   "pangolin": "pangolin"
 }
 ```
@@ -50,7 +55,8 @@ Arquivos da pasta `tunel`:
 |---|---|
 | `tunel.ps1` + `tunel.cmd` | Windows |
 | `tunel.sh` | Ubuntu / Fedora (e macOS) |
-| `tunel.config.json` | todos (um por PC) |
+| `tunel.config.json` | todos: perfil **padrão** (um por PC) |
+| `tunel.config.<perfil>.json` | outros servidores/domínios no mesmo PC (seção 5) |
 
 ---
 
@@ -136,8 +142,8 @@ Notas do Fedora:
 Com seu app rodando localmente:
 
 ```bash
-tunel 8001 meuapp           # https://meuapp.juliobalbino.com.br  -> localhost:8001
-tunel 8001                  # https://p8001.juliobalbino.com.br   -> localhost:8001
+tunel 8001 meuapp           # https://meuapp.dbpe.com.br  -> localhost:8001
+tunel 8001                  # https://p8001.dbpe.com.br   -> localhost:8001
 tunel 8001:api 5173:front   # vários ao mesmo tempo
 ```
 
@@ -175,7 +181,7 @@ tunel 3000 teste-notebook
 
 Ou, sem Node, no Linux: `python3 -m http.server 3000`.
 
-Abra `https://teste-notebook.juliobalbino.com.br`. Com o site de teste, deve aparecer o selo verde
+Abra `https://teste-notebook.dbpe.com.br`. Com o site de teste, deve aparecer o selo verde
 **"Acessado pelo túnel"**.
 
 ---
@@ -187,6 +193,9 @@ Abra `https://teste-notebook.juliobalbino.com.br`. Com o site de teste, deve apa
 - **Não crie pelo painel um recurso com o mesmo subdomínio** que o script usa. O recurso criado
   manualmente vem com login ligado e tem prioridade — o link passa a pedir login.
 - Um mesmo site (ID/Secret) **não pode** rodar em dois PCs ao mesmo tempo.
+- **Dois servidores no mesmo PC:** crie um site em cada painel e um arquivo
+  `tunel.config.<perfil>.json` para o segundo (mesmo formato). Use com `tunel -p <perfil> ...`
+  (Windows). Os perfis não se misturam: cada um tem conexão e estado próprios.
 
 ## Problemas comuns
 
@@ -206,3 +215,29 @@ Abra `https://teste-notebook.juliobalbino.com.br`. Com o site de teste, deve apa
 Painel → **Sites** → apague o site do PC. Os recursos dele param de funcionar e podem ser
 apagados em **Resources**. No PC, apague a pasta do `tunel` (e no Linux o link
 `~/.local/bin/tunel`).
+
+---
+
+## 5. Usar mais de um servidor (perfis)
+
+O mesmo PC pode ter um site em cada servidor Pangolin, cada um com seu domínio. Cada servidor é
+um **perfil**:
+
+1. No painel do outro servidor, crie o site (seção 1) e copie o ID e o Secret.
+2. Na pasta `tunel`, copie `tunel.config.example.json` para `tunel.config.<perfil>.json`
+   (ex.: `tunel.config.casa.json`) e preencha `id`, `secret`, `endpoint` e `domain` **desse servidor**.
+3. Use com `-p <perfil>` (ou a variável `TUNEL_PROFILE`):
+
+```bash
+tunel 8001 meuapp                # perfil padrão  -> https://meuapp.dbpe.com.br
+tunel -p casa 8001 meuapp        # perfil "casa"  -> https://meuapp.<dominio-do-casa>
+tunel list                       # todos os perfis (Windows)
+tunel -p casa stop               # encerra só o perfil "casa" (Windows)
+```
+
+Cada perfil tem conexão, estado e supervisor próprios; a mesma porta local pode ser exposta em
+perfis diferentes. Se editar o arquivo de um perfil com o túnel aberto, ele reconecta sozinho.
+No Linux, `tunel.sh` aceita `-p` para escolher o arquivo de configuração.
+
+Para instalar um servidor novo, use o [prompt](01-prompt-instalar-servidor.md); se o servidor já
+tem um nginx nas portas 80/443, siga o [guia com nginx](03-servidor-com-nginx.md).

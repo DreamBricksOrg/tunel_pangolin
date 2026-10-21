@@ -2,6 +2,8 @@
 .ssh/
 pangolin-credentials/
 tunel/tunel.config.json
+tunel/tunel.config.*.json
+!tunel/tunel.config.example.json
 *.key
 *.pem
 
@@ -11,3 +13,16 @@ pangolin/config/letsencrypt/
 pangolin/config/key
 pangolin/config/traefik/logs/
 *.tmp
+
+# Video: so o resultado e o codigo-fonte; frames/intermediarios ficam de fora
+brag-output/work/node_modules/
+brag-output/work/frames/
+brag-output/work/stills/
+brag-output/work/*.png
+brag-output/work/*.wav
+brag-output/work/*.log
+brag-output/work/package*.json
+
+# Videos finais ficam so no disco local
+brag-output/*.mp4
+brag-output/*.jpg

@@ -1,0 +1,38 @@
+{
+  "fps": 30,
+  "dur": 60.4,
+  "scenes": {
+    "intro": [0, 3.8],
+    "s1": [3.9, 10.4],
+    "s2": [10.5, 16.5],
+    "s3": [16.6, 22.6],
+    "s4": [22.7, 30.7],
+    "s5": [30.8, 37.8],
+    "s6": [37.9, 44.9],
+    "s7": [45.0, 56.0],
+    "outro": [56.1, 60.4]
+  },
+  "type": {
+    "s1_clone": { "t": 4.5,  "text": "git clone https://github.com/juliobalbino/tunel_pangolin", "cps": 30 },
+    "s1_cd":    { "t": 7.6,  "text": "cd tunel_pangolin", "cps": 30 },
+    "s1_ls":    { "t": 8.4,  "text": "ls", "cps": 10 },
+    "s2_url":   { "t": 10.9, "text": "pangolin.dbpe.com.br", "cps": 18 },
+    "s3_mail":  { "t": 17.2, "text": "voce@email.com", "cps": 16 },
+    "s3_pass":  { "t": 18.4, "text": "••••••••••", "cps": 14 },
+    "s4_name":  { "t": 25.7, "text": "meu-pc", "cps": 10 },
+    "s6_id":    { "t": 39.2, "text": "qz7kv3mpl0a8hx2", "cps": 18 },
+    "s6_secret":{ "t": 40.3, "text": "••••••••••••••••••••", "cps": 28 },
+    "s7_cd":    { "t": 45.4, "text": "cd tunel", "cps": 14 },
+    "s7_run":   { "t": 46.5, "text": ".\\tunel 8001 meuapp", "cps": 20 }
+  },
+  "events": {
+    "s1_out": [6.7, 7.2, 8.8, 9.3],
+    "s2_page": 12.0,
+    "s3_press": 19.7, "s3_ok": 20.3,
+    "s4_sidebar": 23.0, "s4_btn": 24.0, "s4_modal": 24.9, "s4_create": 27.0, "s4_creds": 27.6, "s4_warn": 28.5,
+    "s5_win": 31.3, "s5_lin": 32.6, "s5_note": 34.6,
+    "s6_tab": 38.3, "s6_lines": 38.6, "s6_labels": 41.4, "s6_warn": 42.6,
+    "s7_out": [47.8, 48.6, 49.3], "s7_browser": 49.3, "s7_linux": 51.4, "s7_chips": 52.8,
+    "outro": [56.3, 56.9, 57.8]
+  }
+}

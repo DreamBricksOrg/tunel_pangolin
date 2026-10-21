@@ -6,12 +6,26 @@
 #   tunel 8001                          -> https://p8001.<dominio>        ->  localhost:8001
 #   tunel 8001:dbaudiosync 3000:teste   (varios tuneis ao mesmo tempo)
 #   tunel 8001 dbaudiosync --dry-run    (so mostra o blueprint gerado)
+#   tunel -p outro 8001 app             (outro servidor: tunel.config.outro.json)
 #
 # Credenciais ficam em tunel.config.json (mesma pasta do script).
 set -euo pipefail
 
 DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+PROFILE="${TUNEL_PROFILE:-}"
+ARGS0=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -p|--profile) [[ $# -ge 2 ]] || { echo "$1 precisa do nome do perfil" >&2; exit 1; }; PROFILE="$2"; shift 2 ;;
+    *) ARGS0+=("$1"); shift ;;
+  esac
+done
+set -- ${ARGS0[@]+"${ARGS0[@]}"}
 CFG="$DIR/tunel.config.json"
+if [[ -n "$PROFILE" ]]; then
+  [[ "$PROFILE" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$ ]] || { echo "Perfil invalido: '$PROFILE'" >&2; exit 1; }
+  CFG="$DIR/tunel.config.$PROFILE.json"
+fi
 [[ -f "$CFG" ]] || { echo "Nao achei $CFG" >&2; exit 1; }
 
 cfg() { python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))[sys.argv[2]])' "$CFG" "$1"; }

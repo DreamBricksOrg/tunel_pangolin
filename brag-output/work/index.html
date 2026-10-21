@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<style>
+:root{--bg:#090b0f;--fg:#e8edf2;--mut:#7b8794;--grn:#34d399;--cya:#60a5fa;--amb:#fbbf24;--red:#f87171;--card:#12161d;--line:#222a35;
+  --mono:"Cascadia Mono","Cascadia Code",Consolas,monospace;--sans:"Segoe UI Variable Display","Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg)}
+#stage{position:relative;width:1920px;height:1080px;overflow:hidden;font-family:var(--sans);color:var(--fg)}
+#bg{position:absolute;inset:-100px;background:
+  radial-gradient(900px 600px at 78% 12%,rgba(52,211,153,.13),transparent 70%),
+  radial-gradient(800px 600px at 10% 95%,rgba(96,165,250,.10),transparent 70%)}
+#grid{position:absolute;inset:-80px;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:80px 80px}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.55) 100%);pointer-events:none}
+.scene{position:absolute;inset:0;opacity:0;display:none}
+.mut{color:var(--mut)}.grn{color:var(--grn)}.cya{color:var(--cya)}.amb{color:var(--amb)}.red{color:var(--red)}
+.mono{font-family:var(--mono)}
+.ln{overflow:hidden;height:190px;line-height:190px}
+.ln span{display:inline-block;font-size:158px;font-weight:800;letter-spacing:-.04em}
+.g{color:var(--grn)}
+
+/* header */
+#hdr{position:absolute;left:0;right:0;top:0;height:170px;opacity:0}
+#hnum{position:absolute;left:96px;top:52px;width:76px;height:76px;border-radius:22px;background:var(--grn);color:#04120c;font:800 46px var(--sans);display:grid;place-items:center}
+#htitle{position:absolute;left:196px;top:48px;font-size:72px;font-weight:800;letter-spacing:-.035em;line-height:84px}
+#dots{position:absolute;right:96px;top:76px;display:flex;gap:14px}
+#dots i{width:46px;height:8px;border-radius:4px;background:#222a35;display:block}
+#dots i.on{background:var(--grn)}
+#dots i.cur{background:var(--grn);width:74px}
+#cap{position:absolute;left:120px;right:120px;bottom:70px;text-align:center;font-size:46px;font-weight:700;letter-spacing:-.02em;opacity:0;line-height:1.2}
+
+/* terminal */
+.term{position:absolute;background:#0d1117;border:1px solid var(--line);border-radius:18px;box-shadow:0 30px 90px rgba(0,0,0,.55);overflow:hidden}
+.tbar{height:52px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:0 20px;background:#10151c}
+.tbar i{width:14px;height:14px;border-radius:50%;background:#2a3340;display:block}
+.tbar b{margin-left:14px;font:500 18px var(--mono);color:var(--mut)}
+.tbody{padding:26px 36px;font-family:var(--mono)}
+.row{white-space:pre}
+.cur{color:var(--grn)}
+.chip{display:inline-block;padding:12px 22px;border-radius:999px;background:#12161d;border:1px solid var(--line);font:500 26px var(--mono);color:var(--fg);margin-right:14px}
+.chip b{color:var(--grn);font-weight:500}.chip u{text-decoration:none;color:var(--amb)}
+
+/* browser window */
+.bw{position:absolute;background:#0f1218;border:1px solid #222a35;border-radius:18px;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.6)}
+.bbar{height:64px;background:#171c24;display:flex;align-items:center;gap:14px;padding:0 20px;border-bottom:1px solid #222a35}
+.bbar .dots3{display:flex;gap:9px}.bbar .dots3 i{width:13px;height:13px;border-radius:50%;background:#2a3340;display:block}
+.url{flex:1;height:38px;border-radius:19px;background:#0c0f14;border:1px solid #262e3a;display:flex;align-items:center;gap:10px;padding:0 18px;font:500 21px var(--sans);color:#dbe3ea}
+.lock{width:13px;height:15px;border:3px solid var(--grn);border-radius:4px}
+.bpage{position:absolute;top:64px;left:0;right:0;bottom:0}
+.field{height:62px;border-radius:12px;background:#0b0e13;border:1px solid #2a3340;display:flex;align-items:center;padding:0 20px;font:400 26px var(--sans);color:#e8edf2;margin-top:10px}
+.lab{font:600 20px var(--sans);color:#9aa6b2;margin-top:22px}
+.btn{height:64px;border-radius:12px;background:var(--grn);color:#04120c;font:700 26px var(--sans);display:grid;place-items:center;margin-top:30px}
+.login{position:absolute;left:50%;top:50%;width:560px;transform:translate(-50%,-50%)}
+.login h2{font-size:52px;letter-spacing:-.03em}
+.login p{color:var(--mut);font-size:24px;margin-top:6px}
+.side{position:absolute;left:0;top:0;bottom:0;width:250px;background:#0c0f14;border-right:1px solid #222a35;padding:26px 18px}
+.side div{padding:14px 18px;border-radius:10px;font:600 24px var(--sans);color:#9aa6b2;margin-bottom:6px}
+.side .act{background:#14231d;color:var(--grn)}
+.main{position:absolute;left:250px;right:0;top:0;bottom:0;padding:34px 40px}
+.main h3{font-size:44px;letter-spacing:-.03em}
+.empty{margin-top:60px;border:2px dashed #2a3340;border-radius:16px;height:200px;display:grid;place-items:center;color:var(--mut);font-size:26px}
+.addbtn{position:absolute;right:40px;top:34px;padding:14px 26px;border-radius:12px;background:var(--grn);color:#04120c;font:700 24px var(--sans)}
+.modal{position:absolute;left:50%;top:50%;width:640px;background:#151a22;border:1px solid #2a3340;border-radius:20px;padding:34px 38px;box-shadow:0 40px 100px rgba(0,0,0,.7)}
+.modal h4{font-size:36px;letter-spacing:-.02em}
+.opt{margin-top:12px;padding:14px 18px;border-radius:12px;border:1px solid #2a3340;font:600 23px var(--sans);color:#aab5c0;display:flex;align-items:center;gap:14px}
+.opt i{width:20px;height:20px;border-radius:50%;border:2px solid #4a5666;display:block}
+.opt.sel{border-color:var(--grn);color:#fff;background:#10201a}.opt.sel i{border-color:var(--grn);background:radial-gradient(var(--grn) 45%,transparent 50%)}
+.dim{position:absolute;inset:0;background:rgba(5,7,10,.62)}
+
+/* cards */
+.card{position:absolute;background:var(--card);border:1px solid var(--line);border-radius:26px;padding:40px}
+.card h3{font-size:56px;letter-spacing:-.03em}
+.card .sub{font-size:28px;color:var(--mut);margin-top:6px}
+.snip{margin-top:26px;padding:22px 24px;border-radius:14px;background:#0a0d12;border:1px solid var(--line);font:500 25px var(--mono);color:var(--cya);white-space:pre-wrap;word-break:break-all;line-height:1.45}
+.file{display:flex;align-items:center;gap:18px;margin-top:26px;padding:20px 24px;border-radius:14px;background:#0a0d12;border:1px solid var(--line);font:500 24px var(--mono);color:var(--fg)}
+.file i{width:42px;height:52px;border-radius:8px;background:linear-gradient(160deg,#60a5fa,#2563eb);display:block;flex:none}
+
+/* editor */
+.ed{position:absolute;left:140px;top:215px;width:1180px;height:630px;background:#0d1117;border:1px solid var(--line);border-radius:18px;box-shadow:0 30px 90px rgba(0,0,0,.55);overflow:hidden}
+.etab{height:54px;background:#10151c;border-bottom:1px solid var(--line);display:flex;align-items:flex-end}
+.etab div{padding:0 26px;height:54px;line-height:54px;background:#0d1117;border-right:1px solid var(--line);font:500 21px var(--mono);color:#dbe3ea;border-top:3px solid var(--grn)}
+.ecode{padding:26px 34px;font:500 32px/58px var(--mono)}
+.ecode .k{color:#7dd3fc}.ecode .s{color:#a5e8c3}.ecode .p{color:#6b7684}
+.ecode .hl{background:rgba(251,191,36,.14);border-radius:6px;outline:1px solid rgba(251,191,36,.45)}
+.lbl{position:absolute;font:700 28px var(--sans);color:var(--amb)}
+.warn{position:absolute;padding:20px 26px;border-radius:16px;background:rgba(248,113,113,.10);border:1px solid rgba(248,113,113,.4);font:600 27px/1.35 var(--sans);color:#fecaca}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg"></div><div id="grid"></div>
+
+  <section class="scene" id="intro">
+    <div style="position:absolute;left:0;right:0;top:50%;transform:translateY(-52%);text-align:center">
+      <div class="ln"><span id="i1">Do zero ao</span></div>
+      <div class="ln"><span id="i2">link <span class="g" style="font-size:inherit">https</span></span></div>
+      <div id="i3" style="margin-top:26px;font:500 40px var(--mono);color:var(--mut);letter-spacing:.06em">EM 7 PASSOS</div>
+    </div>
+  </section>
+
+  <section class="scene" id="s1"><div class="term" id="t1" style="left:220px;top:230px;width:1480px;height:560px"><div class="tbar"><i></i><i></i><i></i><b>PowerShell</b></div><div class="tbody" id="t1b" style="font-size:30px;line-height:56px"></div></div><div id="s1chip" style="position:absolute;left:220px;top:820px"></div></section>
+  <section class="scene" id="s2"><div class="bw" id="b2" style="left:300px;top:200px;width:1320px;height:680px"></div></section>
+  <section class="scene" id="s3"><div class="bw" id="b3" style="left:300px;top:200px;width:1320px;height:680px"></div></section>
+  <section class="scene" id="s4"><div class="bw" id="b4" style="left:300px;top:200px;width:1320px;height:680px"></div></section>
+  <section class="scene" id="s5"><div class="card" id="c5w" style="left:140px;top:250px;width:790px;height:430px"></div><div class="card" id="c5l" style="left:990px;top:250px;width:790px;height:430px"></div><div id="n5" style="position:absolute;left:0;right:0;top:740px;text-align:center"></div></section>
+  <section class="scene" id="s6"><div class="ed" id="ed6"></div><div id="x6"></div></section>
+  <section class="scene" id="s7"><div class="term" id="t7" style="left:90px;top:225px;width:1080px;height:520px"><div class="tbar"><i></i><i></i><i></i><b>PowerShell</b></div><div class="tbody" id="t7b" style="font-size:29px;line-height:54px"></div></div><div class="bw" id="b7" style="left:1230px;top:265px;width:600px;height:430px"></div><div id="s7chips" style="position:absolute;left:90px;top:790px;width:1740px"></div></section>
+
+  <section class="scene" id="outro">
+    <div style="position:absolute;left:0;right:0;top:230px;text-align:center">
+      <div class="ln"><span id="o1">Pronto.</span></div>
+      <div class="ln"><span id="o2" class="g">Localhost com https.</span></div>
+    </div>
+    <div id="o3" style="position:absolute;left:0;right:0;top:700px;text-align:center;font:500 44px var(--mono);opacity:0"><span class="mut">github.com/</span>juliobalbino<span class="mut">/</span><b style="font-weight:500;color:var(--grn)">tunel_pangolin</b></div>
+    <div id="o4" style="position:absolute;left:0;right:0;top:790px;text-align:center;font:500 30px var(--mono);color:var(--mut);opacity:0">outro servidor? <span class="amb">tunel -p &lt;perfil&gt; 8001 app</span></div>
+  </section>
+
+  <div id="hdr"><div id="hnum">1</div><div id="htitle"></div><div id="dots"></div></div>
+  <div id="cap"></div>
+  <div id="vig"></div>
+</div>
+<script>
+const TL=window.TL, SC=TL.scenes, TY=TL.type, EV=TL.events;
+const $=id=>document.getElementById(id);
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const seg=(t,a,b)=>clamp((t-a)/(b-a));
+const eo=x=>1-Math.pow(1-x,3);
+const eob=x=>{const c1=1.4,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)};
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const caret=(t,on)=>on?`<span class="cur" style="opacity:${Math.floor(t*2.2)%2===0?1:0}">▍</span>`:'';
+const tyText=(k,t)=>{const s=TY[k];return Array.from(s.text).slice(0,clamp(Math.floor((t-s.t)*s.cps),0,Array.from(s.text).length)).join('')};
+const tyEnd=k=>TY[k].t+Array.from(TY[k].text).length/TY[k].cps;
+const fadeS=(t,a,d=0.28,dy=14)=>{const p=eo(seg(t,a,a+d));return `opacity:${p};transform:translateY(${(1-p)*dy}px)`};
+
+function scene(id,t,fi=0.22,fo=0.22){
+  const [s,e]=SC[id]; const o=Math.min(seg(t,s,s+fi),1-seg(t,e-fo,e));
+  const el=$(id); el.style.opacity=o; el.style.display=o>0.001?'block':'none'; return o>0.001?o:0;
+}
+function rise(id,t,t0,d=0.55){const p=eo(seg(t,t0,t0+d));$(id).style.transform=`translateY(${(1-p)*115}%)`}
+
+function termRows(rows,t){
+  return rows.map(r=>{
+    if(r.cmd){const s=TY[r.cmd]; if(t<s.t) return ''; const act=t<r.until;
+      return `<div class="row"><span class="mut">${r.prompt||'PS&gt; '}</span>${esc(tyText(r.cmd,t))}${caret(t,act)}</div>`;}
+    if(t<r.at) return '';
+    return `<div class="row" style="${fadeS(t,r.at,0.18,8)}">${r.html}</div>`;
+  }).join('');
+}
+
+const steps=[['s1','Baixar o projeto','Clone o repositório do GitHub (ou baixe o ZIP).'],
+ ['s2','Abrir o painel','Abra o painel do seu servidor no navegador.'],
+ ['s3','Fazer login','Entre com o usuário admin criado na instalação.'],
+ ['s4','Criar o site','Sites → Add Site → Pangolin Site. Copie o ID e o Secret.'],
+ ['s5','Instalar o Pangolin CLI','Instale o CLI do Pangolin no seu sistema.'],
+ ['s6','Colocar o secret','Cole o ID e o Secret no tunel.config.json, dentro da pasta tunel.'],
+ ['s7','Abrir o túnel','Com o app rodando na porta 8001, abra o túnel.']];
+
+function header(t){
+  let cur=-1,o=0;
+  steps.forEach((s,i)=>{const [a,b]=SC[s[0]]; if(t>=a&&t<b){cur=i; o=Math.min(seg(t,a,a+0.3),1-seg(t,b-0.25,b));}});
+  const h=$('hdr'),c=$('cap');
+  if(cur<0){h.style.opacity=0;c.style.opacity=0;return}
+  h.style.opacity=o; $('hnum').textContent=cur+1; $('htitle').textContent=steps[cur][1];
+  $('dots').innerHTML=steps.map((s,i)=>`<i class="${i<cur?'on':i===cur?'cur':''}"></i>`).join('');
+  const [a,b]=SC[steps[cur][0]]; const p=eo(seg(t,a+0.5,a+0.9));
+  c.textContent=steps[cur][2]; c.style.opacity=Math.min(p,1-seg(t,b-0.25,b)); c.style.transform=`translateY(${(1-p)*18}px)`;
+}
+
+const browserBar=(url,t)=>`<div class="bbar"><div class="dots3"><i></i><i></i><i></i></div><div class="url"><span class="lock"></span><span>${url}</span></div></div>`;
+const loginHTML=(email,pass,press,ok,showForm,t)=>`
+  <div class="bpage"><div class="login"><div style="${showForm}">
+    <h2>Entrar</h2><p>Painel do túnel</p>
+    <div class="lab">E-mail</div><div class="field">${esc(email)}</div>
+    <div class="lab">Senha</div><div class="field">${esc(pass)}</div>
+    <div class="btn" style="${press?'transform:scale(.97);filter:brightness(1.25)':''}">${ok?'Logado ✓':'Entrar'}</div>
+  </div></div></div>`;
+
+function render(t){
+  $('grid').style.transform=`translate(${-(t*9)%80}px,${-(t*5)%80}px)`;
+  $('bg').style.transform=`translate(${Math.sin(t*.35)*30}px,${Math.cos(t*.3)*20}px)`;
+
+  if(scene('intro',t,0.05,0.3)){rise('i1',t,0.15);rise('i2',t,0.7);$('i3').style.cssText+=';'+fadeS(t,1.5,0.4,12)}
+
+  // 1 clone
+  if(scene('s1',t)){
+    const rows=[{cmd:'s1_clone',until:EV.s1_out[0]},
+      {at:EV.s1_out[0],html:`<span class="mut">Cloning into 'tunel_pangolin'…</span>`},
+      {at:EV.s1_out[1],html:`<span class="grn">pronto.</span>`},
+      {cmd:'s1_cd',until:TY.s1_ls.t},{cmd:'s1_ls',until:EV.s1_out[2]},
+      {at:EV.s1_out[2],html:`<span class="cya">docs   pangolin   site-teste   </span><span class="grn">tunel</span>`}];
+    $('t1b').innerHTML=termRows(rows,t);
+    $('s1chip').innerHTML=t>=EV.s1_out[3]?`<span class="chip" style="${fadeS(t,EV.s1_out[3],0.3)}">a pasta <b>tunel</b> é a que vamos usar</span>`:'';
+  }
+  // 2 open panel
+  if(scene('s2',t)){
+    const url=tyText('s2_url',t), typing=t<tyEnd('s2_url');
+    $('b2').innerHTML=browserBar(esc(url)+(typing?caret(t,true):''),t)+(t>=EV.s2_page?loginHTML('','',false,false,fadeS(t,EV.s2_page,0.4,24),t):'<div class="bpage"></div>');
+  }
+  // 3 login
+  if(scene('s3',t)){
+    const mail=tyText('s3_mail',t), pass=tyText('s3_pass',t);
+    const press=t>=EV.s3_press&&t<EV.s3_press+0.3, ok=t>=EV.s3_ok;
+    $('b3').innerHTML=browserBar('pangolin.dbpe.com.br',t)+loginHTML(mail+(t<tyEnd('s3_mail')?'▍':''),pass+((t>=TY.s3_pass.t&&t<tyEnd('s3_pass'))?'▍':''),press,ok,'',t);
+  }
+  // 4 create site
+  if(scene('s4',t)){
+    const sb=fadeS(t,EV.s4_sidebar,0.35,10);
+    const pulse=t>=EV.s4_btn&&t<EV.s4_modal?1+0.06*Math.sin((t-EV.s4_btn)*14):1;
+    const modalOn=t>=EV.s4_modal&&t<EV.s4_creds, credsOn=t>=EV.s4_creds;
+    const name=tyText('s4_name',t)+((t>=TY.s4_name.t&&t<tyEnd('s4_name'))?'▍':'');
+    const press=t>=EV.s4_create&&t<EV.s4_create+0.3;
+    let html=browserBar('pangolin.dbpe.com.br/sites',t)+`<div class="bpage">
+      <div class="side" style="${sb}"><div>Painel</div><div class="act">Sites</div><div>Recursos</div><div>Configurações</div></div>
+      <div class="main"><h3>Sites</h3><div class="addbtn" style="transform:scale(${pulse});transform-origin:right center;${t>=EV.s4_btn?'box-shadow:0 0 0 6px rgba(52,211,153,.25)':''}">+ Add Site</div>
+        <div class="empty" style="${fadeS(t,EV.s4_sidebar+0.3,0.3)}">Nenhum site ainda</div></div>`;
+    if(modalOn||credsOn) html+=`<div class="dim" style="opacity:${eo(seg(t,EV.s4_modal,EV.s4_modal+0.25))}"></div>`;
+    if(modalOn){const p=eob(seg(t,EV.s4_modal,EV.s4_modal+0.4));
+      html+=`<div class="modal" style="transform:translate(-50%,-50%) scale(${.9+.1*p});opacity:${clamp(p)}">
+        <h4>Criar site</h4>
+        <div class="opt sel"><i></i>Pangolin Site (Recomendado)</div><div class="opt"><i></i>WireGuard básico</div>
+        <div class="lab">Nome</div><div class="field">${esc(name)}</div>
+        <div class="btn" style="${press?'transform:scale(.97);filter:brightness(1.25)':''}">Create Site</div></div>`;}
+    if(credsOn){const p=eob(seg(t,EV.s4_creds,EV.s4_creds+0.45));
+      html+=`<div class="modal" style="transform:translate(-50%,-50%) scale(${.92+.08*p});opacity:${clamp(p)};width:760px">
+        <h4>Site criado ✓</h4>
+        <div class="lab">ID</div><div class="field mono" style="font-family:var(--mono);color:var(--cya)">qz7kv3mpl0a8hx2</div>
+        <div class="lab">Secret</div><div class="field mono" style="font-family:var(--mono);color:var(--amb)">••••••••••••••••••••</div>
+        <div style="margin-top:22px;font:600 25px var(--sans);color:#fecaca;${fadeS(t,EV.s4_warn,0.3)}">⚠ O Secret só aparece agora. Copie e guarde.</div></div>`;}
+    html+='</div>';
+    $('b4').innerHTML=html;
+  }
+  // 5 install CLI
+  if(scene('s5',t)){
+    $('c5w').innerHTML=`<div style="${fadeS(t,EV.s5_win,0.4,30)}"><h3>Windows</h3><div class="sub">Instalador</div>
+      <div class="file"><i></i><span>pangolin-cli_windows_installer.msi</span></div>
+      <div class="snip" style="color:#9aa6b2">github.com/fosrl/cli/releases</div></div>`;
+    $('c5l').innerHTML=`<div style="${fadeS(t,EV.s5_lin,0.4,30)}"><h3>Ubuntu · Fedora</h3><div class="sub">Um comando no terminal</div>
+      <div class="snip" style="margin-top:26px;font-size:25px">curl -fsSL \\
+  https://static.pangolin.net/get-cli.sh \\
+  | bash</div></div>`;
+    $('c5w').style.opacity=eo(seg(t,EV.s5_win,EV.s5_win+0.3)); $('c5l').style.opacity=eo(seg(t,EV.s5_lin,EV.s5_lin+0.3));
+    $('n5').innerHTML=t>=EV.s5_note?`<span class="chip" style="${fadeS(t,EV.s5_note,0.3)}">depois: <b>pangolin --help</b> deve responder</span>`:'';
+  }
+  // 6 secret in config
+  if(scene('s6',t)){
+    const L=(i)=>EV.s6_lines+i*0.28;
+    const line=(i,h)=>t>=L(i)?`<div style="${fadeS(t,L(i),0.2,6)}">${h}</div>`:'<div>&nbsp;</div>';
+    const idv=tyText('s6_id',t)+((t>=TY.s6_id.t&&t<tyEnd('s6_id'))?'▍':''), sv=tyText('s6_secret',t)+((t>=TY.s6_secret.t&&t<tyEnd('s6_secret'))?'▍':'');
+    $('ed6').innerHTML=`<div class="etab" style="${fadeS(t,EV.s6_tab,0.3,8)}"><div>tunel/tunel.config.json</div></div><div class="ecode">
+      ${line(0,'<span class="p">{</span>')}
+      ${line(1,`  <span class="k">"id"</span><span class="p">:</span> <span class="s hl">"${esc(idv)}"</span><span class="p">,</span>`)}
+      ${line(2,`  <span class="k">"secret"</span><span class="p">:</span> <span class="s hl">"${esc(sv)}"</span><span class="p">,</span>`)}
+      ${line(3,'  <span class="k">"endpoint"</span><span class="p">:</span> <span class="s">"https://pangolin.dbpe.com.br"</span><span class="p">,</span>')}
+      ${line(4,'  <span class="k">"domain"</span><span class="p">:</span> <span class="s">"dbpe.com.br"</span><span class="p">,</span>')}
+      ${line(5,'  <span class="k">"pangolin"</span><span class="p">:</span> <span class="s">"pangolin"</span>')}
+      ${line(6,'<span class="p">}</span>')}</div>`;
+    const lab=fadeS(t,EV.s6_labels,0.35,10);
+    $('x6').innerHTML=(t>=EV.s6_labels?`<div class="lbl" style="left:1370px;top:365px;${lab}">← ID do passo 4</div><div class="lbl" style="left:1370px;top:424px;${lab}">← Secret do passo 4</div>`:'')+
+      (t>=EV.s6_warn?`<div class="warn" style="left:1370px;top:540px;width:430px;${fadeS(t,EV.s6_warn,0.35,14)}">⚠ Não compartilhe nem versione esse arquivo.<br><span style="font-weight:400;color:#f5b8b8">Ele já está no .gitignore.</span></div>`:'');
+  }
+  // 7 run
+  if(scene('s7',t)){
+    const rows=[{cmd:'s7_cd',until:TY.s7_run.t},{cmd:'s7_run',until:EV.s7_out[0]},
+      {at:EV.s7_out[0],html:`<span class="mut">Conectando ao Pangolin…</span>`},
+      {at:EV.s7_out[1],html:`<span class="grn">https://meuapp.dbpe.com.br</span>\n<span class="mut">   →  http://localhost:8001</span>`},
+      {at:EV.s7_out[2],html:`<span class="grn">meuapp: pronto (200)</span>`}];
+    $('t7b').innerHTML=termRows(rows,t);
+    const bp=eob(seg(t,EV.s7_browser,EV.s7_browser+0.55));
+    const b=$('b7'); b.style.opacity=clamp(seg(t,EV.s7_browser,EV.s7_browser+0.25)); b.style.transform=`translateX(${(1-bp)*80}px) scale(${.96+.04*bp})`;
+    b.innerHTML=`<div class="bbar"><div class="url"><span class="lock"></span><span>meuapp.dbpe.com.br</span></div></div><div class="bpage" style="padding:46px 40px;background:#fff;color:#111"><div style="font-size:54px;font-weight:800;letter-spacing:-.03em">Meu app</div><div style="font:400 23px var(--mono);color:#555;margin-top:8px">rodando em localhost:8001</div><div style="display:inline-flex;align-items:center;gap:12px;margin-top:34px;padding:12px 20px;border-radius:999px;background:#dcfce7;color:#14532d;font:600 24px var(--sans)"><i style="width:13px;height:13px;border-radius:50%;background:#16a34a;display:block"></i>Acessado pelo túnel</div></div>`;
+    let ch='';
+    if(t>=EV.s7_linux) ch+=`<span class="chip" style="${fadeS(t,EV.s7_linux,0.3)}">Linux: <b>./tunel.sh 8001 meuapp</b></span>`;
+    if(t>=EV.s7_chips) ch+=`<span class="chip" style="${fadeS(t,EV.s7_chips,0.3)}"><u>Ctrl+C</u> encerra</span><span class="chip" style="${fadeS(t,EV.s7_chips+0.35,0.3)}"><b>tunel list</b> mostra os túneis</span>`;
+    $('s7chips').innerHTML=ch;
+  }
+  // outro
+  if(scene('outro',t,0.2,0.001)){
+    rise('o1',t,EV.outro[0],0.5); rise('o2',t,EV.outro[1],0.5);
+    $('o3').style.cssText+=';'+fadeS(t,EV.outro[2],0.4,16);
+    $('o4').style.cssText+=';'+fadeS(t,EV.outro[2]+0.5,0.4,12);
+  }
+  header(t);
+}
+window.render=render;
+</script>
+</body>
+</html>

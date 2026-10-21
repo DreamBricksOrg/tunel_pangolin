@@ -86,6 +86,10 @@ No final, me dê um resumo: o que foi instalado, onde, e os próximos passos
 
 ---
 
+> **O servidor já tem nginx ou apache nas portas 80 e 443?** O prompt acima assume um servidor
+> "cru". Nesse caso siga o [guia com nginx](03-servidor-com-nginx.md): o Pangolin fica em portas
+> internas e o nginx repassa os subdomínios.
+
 ## Depois da instalação
 
 1. Abra `https://pangolin.<dominio>/auth/initial-setup`, cole o token e crie o admin.
@@ -97,8 +101,8 @@ No final, me dê um resumo: o que foi instalado, onde, e os próximos passos
 
 | Item | Valor |
 |---|---|
-| Servidor | Ubuntu 24.04 ARM, `163.176.94.242` |
-| Painel | https://pangolin.juliobalbino.com.br |
+| Servidor | Debian 12 x86_64, `52.67.24.199`, com nginx nas portas 80/443 (veja o [guia com nginx](03-servidor-com-nginx.md)) |
+| Painel | https://pangolin.dbpe.com.br |
 | Pasta no servidor | `/opt/pangolin` |
 | Cópia local da config | `pangolin/` (sem o secret) |
 | Comandos úteis (no servidor) | `cd /opt/pangolin && sudo docker compose ps` · `sudo docker compose logs -f` · `sudo docker compose pull && sudo docker compose up -d` (atualizar) |

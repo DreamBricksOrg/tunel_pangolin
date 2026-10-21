@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<style>
+:root{--bg:#090b0f;--fg:#e8edf2;--mut:#7b8794;--grn:#34d399;--cya:#60a5fa;--amb:#fbbf24;--card:#12161d;--line:#222a35;
+  --mono:"Cascadia Mono","Cascadia Code",Consolas,monospace;--sans:"Segoe UI Variable Display","Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg)}
+#stage{position:relative;width:1920px;height:1080px;overflow:hidden;font-family:var(--sans);color:var(--fg)}
+#bg{position:absolute;inset:-100px;background:
+  radial-gradient(900px 600px at 78% 12%,rgba(52,211,153,.13),transparent 70%),
+  radial-gradient(800px 600px at 10% 95%,rgba(96,165,250,.10),transparent 70%);}
+#grid{position:absolute;inset:-80px;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:80px 80px}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.55) 100%)}
+.scene{position:absolute;inset:0;opacity:0}
+.mono{font-family:var(--mono)}
+.mut{color:var(--mut)}.grn{color:var(--grn)}.cya{color:var(--cya)}.amb{color:var(--amb)}
+
+/* S1 */
+.h1{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center}
+.ln{overflow:hidden;height:190px;line-height:190px}
+.ln span{display:inline-block;font-size:158px;font-weight:800;letter-spacing:-.04em}
+.ln .g{color:var(--grn)}
+
+/* terminal */
+.term{position:absolute;background:#0d1117;border:1px solid var(--line);border-radius:18px;box-shadow:0 30px 90px rgba(0,0,0,.55);overflow:hidden}
+.tbar{height:52px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:0 20px;background:#10151c}
+.tbar i{width:14px;height:14px;border-radius:50%;background:#2a3340;display:block}
+.tbar b{margin-left:14px;font:500 18px var(--mono);color:var(--mut)}
+.tbody{padding:30px 40px;font-family:var(--mono)}
+.row{white-space:pre}
+.row{opacity:0}
+.cur{color:var(--grn)}
+
+/* S2 */
+#term2{left:90px;top:290px;width:1010px;height:440px}
+#term2 .tbody{font-size:30px;line-height:56px}
+#browser{position:absolute;left:1180px;top:290px;width:660px;height:440px;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 30px 90px rgba(0,0,0,.6);opacity:0;color:#111}
+.bbar{height:62px;background:#eef1f5;display:flex;align-items:center;gap:14px;padding:0 20px;border-bottom:1px solid #d8dde4}
+.url{flex:1;height:36px;border-radius:18px;background:#fff;border:1px solid #d3d9e0;display:flex;align-items:center;gap:10px;padding:0 16px;font:500 20px var(--sans);color:#2a3340}
+.lock{width:14px;height:16px;border:3px solid #16a34a;border-radius:4px;position:relative}
+.bpage{padding:48px 44px}
+.bpage h2{font-size:60px;letter-spacing:-.03em}
+.bpage p{margin-top:12px;font:400 24px var(--mono);color:#555}
+.badge{display:inline-flex;align-items:center;gap:12px;margin-top:40px;padding:14px 22px;border-radius:999px;background:#dcfce7;color:#14532d;font:600 26px var(--sans)}
+.badge i{width:14px;height:14px;border-radius:50%;background:#16a34a}
+.cap{position:absolute;left:0;right:0;bottom:92px;text-align:center;font-size:70px;font-weight:800;letter-spacing:-.03em}
+
+/* S3 */
+.title{position:absolute;left:0;right:0;top:96px;text-align:center;font-size:92px;font-weight:800;letter-spacing:-.04em}
+.cards{position:absolute;left:120px;right:120px;top:300px;display:flex;gap:50px}
+.card{flex:1;height:560px;background:var(--card);border:1px solid var(--line);border-radius:26px;padding:44px;opacity:0}
+.card .n{width:64px;height:64px;border-radius:18px;background:var(--grn);color:#04120c;font:800 38px var(--sans);display:grid;place-items:center}
+.card h3{margin-top:30px;font-size:58px;letter-spacing:-.03em}
+.card p{margin-top:16px;font-size:34px;line-height:1.3;color:#b8c2cc}
+.snip{position:absolute;left:44px;right:44px;bottom:44px;padding:20px 22px;border-radius:14px;background:#0a0d12;border:1px solid var(--line);font:500 21px var(--mono);color:var(--cya);white-space:pre}
+
+/* S4 */
+#term4{left:240px;top:250px;width:1440px;height:640px}
+#term4 .tbody{font-size:34px;line-height:60px;padding-top:26px}
+
+/* S5 */
+.big{position:absolute;left:0;right:0;top:170px;text-align:center}
+.big .ln{height:200px;line-height:200px}
+.big .ln span{font-size:168px}
+.cmd5{position:absolute;left:0;right:0;top:820px;text-align:center;font:500 54px var(--mono);opacity:0}
+.cmd5 b{color:var(--grn);font-weight:500}
+.tag{position:absolute;left:0;right:0;top:920px;text-align:center;font:500 28px var(--mono);color:var(--mut);opacity:0;letter-spacing:.12em}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg"></div><div id="grid"></div>
+
+  <section class="scene" id="s1">
+    <div class="h1">
+      <div class="ln"><span id="a1">Seu localhost</span></div>
+      <div class="ln"><span id="a2">vira um link</span></div>
+      <div class="ln"><span id="a3"><span class="g" style="font-size:inherit">https</span> público.</span></div>
+    </div>
+  </section>
+
+  <section class="scene" id="s2">
+    <div class="term" id="term2">
+      <div class="tbar"><i></i><i></i><i></i><b>PowerShell</b></div>
+      <div class="tbody">
+        <div class="row" id="r2a"></div>
+        <div class="row" id="r2b" style="margin-top:20px"></div>
+        <div class="row" id="r2c"></div>
+        <div class="row" id="r2d"></div>
+      </div>
+    </div>
+    <div id="browser">
+      <div class="bbar"><div class="url"><span class="lock"></span><span>meuapp.seudominio.com</span></div></div>
+      <div class="bpage"><h2>Meu app</h2><p>rodando em localhost:8001</p><div class="badge"><i></i>Acessado pelo túnel</div></div>
+    </div>
+    <div class="cap" id="cap2">Um comando. <span class="grn">Um link público.</span></div>
+  </section>
+
+  <section class="scene" id="s3">
+    <div class="title" id="t3">Instalar em 3 passos</div>
+    <div class="cards">
+      <div class="card"><div class="n">1</div><h3>Servidor</h3><p>Um prompt instala o Pangolin. Já tem nginx? Ele fica atrás.</p><div class="snip">01-prompt-instalar-servidor.md</div></div>
+      <div class="card"><div class="n">2</div><h3>Site</h3><p>No painel: Sites → Add Site. Guarde o ID e o Secret.</p><div class="snip">ID  +  Secret</div></div>
+      <div class="card"><div class="n">3</div><h3>Config</h3><p>Preencha o tunel.config.json e rode o tunel.</p><div class="snip">"id": "SEU_ID"
+"secret": "••••••••"
+"domain": "seudominio.com"</div></div>
+    </div>
+  </section>
+
+  <section class="scene" id="s4">
+    <div class="title" id="t4">Mais de um domínio, um PC</div>
+    <div class="term" id="term4">
+      <div class="tbar"><i></i><i></i><i></i><b>PowerShell</b></div>
+      <div class="tbody">
+        <div class="row" id="r4a"></div><div class="row" id="r4b"></div>
+        <div class="row" id="r4c"></div><div class="row" id="r4d"></div>
+        <div class="row" id="r4e"></div><div class="row" id="r4f"></div><div class="row" id="r4g"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="scene" id="s5">
+    <div class="big">
+      <div class="ln"><span id="w1">Seu domínio.</span></div>
+      <div class="ln"><span id="w2">Seu servidor.</span></div>
+      <div class="ln"><span id="w3" class="g">Seu túnel.</span></div>
+    </div>
+    <div class="cmd5" id="cmd5"><span class="mut">PS&gt; </span>tunel <b>8001</b> meuapp<span class="cur" id="cur5">▍</span></div>
+    <div class="tag" id="tag5">TUNEL_PANGOLIN</div>
+  </section>
+
+  <div id="vig"></div>
+</div>
+<script>
+const TL = window.TL;
+const $ = id => document.getElementById(id);
+const clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const seg=(t,a,b)=>clamp((t-a)/(b-a));
+const eo=x=>1-Math.pow(1-x,3);
+const eob=x=>{const c1=1.4,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)};
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function scene(id,t,[s,e],fi=0.22,fo=0.22){
+  const o=Math.min(seg(t,s,s+fi),1-seg(t,e-fo,e));
+  const el=$(id); el.style.opacity=o; el.style.display=o>0.001?'block':'none';
+  return o>0.001;
+}
+function rise(id,t,t0,d=0.55){ // line slides up from clip
+  const p=eo(seg(t,t0,t0+d)); $(id).style.transform=`translateY(${(1-p)*115}%)`;
+}
+function typed(text,t,t0,cps){return text.slice(0,clamp(Math.floor((t-t0)*cps),0,text.length))}
+function show(id,t,t0){const p=seg(t,t0,t0+0.18);const el=$(id);el.style.opacity=p;el.style.transform=`translateY(${(1-eo(p))*10}px)`}
+const caret=(t,on)=>on&&Math.floor(t*2.2)%2===0?'<span class="cur">▍</span>':(on?'<span class="cur" style="opacity:0">▍</span>':'');
+
+function render(t){
+  // slow background drift
+  $('grid').style.transform=`translate(${-(t*9)%80}px,${-(t*5)%80}px)`;
+  $('bg').style.transform=`translate(${Math.sin(t*.35)*30}px,${Math.cos(t*.3)*20}px)`;
+
+  // S1
+  if(scene('s1',t,TL.s1,0.05,0.3)){
+    ['a1','a2','a3'].forEach((id,i)=>rise(id,t,TL.s1_lines[i]));
+  }
+  // S2
+  if(scene('s2',t,TL.s2)){
+    const c=TL.s2_type, cmd='tunel 8001 meuapp';
+    const typing=typed(cmd,t,c,TL.s2_cps), doneTyping=typing.length===cmd.length;
+    $('r2a').style.opacity=1;
+    $('r2a').innerHTML=`<span class="mut">PS&gt; </span>${esc(typing)}${caret(t,!(t>TL.s2_out[0]))}`;
+    $('r2b').innerHTML=`<span class="mut">Conectando ao Pangolin…</span>`; show('r2b',t,TL.s2_out[0]);
+    $('r2c').innerHTML=`<span class="grn">https://meuapp.seudominio.com</span><br><span class="mut">   →  http://localhost:8001</span>`; show('r2c',t,TL.s2_out[1]);
+    $('r2d').innerHTML=`<span class="grn">meuapp: pronto (200)</span>`; show('r2d',t,TL.s2_out[2]);
+    // link line is two lines tall: fix spacing handled by white-space:pre
+    const bp=eob(seg(t,TL.s2_browser,TL.s2_browser+0.55));
+    const b=$('browser'); b.style.opacity=clamp(seg(t,TL.s2_browser,TL.s2_browser+0.25)); b.style.transform=`translateX(${(1-bp)*90}px) scale(${.96+.04*bp})`;
+    const cp=eo(seg(t,TL.s2_caption,TL.s2_caption+0.4)); const cap=$('cap2'); cap.style.opacity=cp; cap.style.transform=`translateY(${(1-cp)*24}px)`;
+  }
+  // S3
+  if(scene('s3',t,TL.s3)){
+    const tp=eo(seg(t,TL.s3_title,TL.s3_title+0.45)); const tt=$('t3'); tt.style.opacity=tp; tt.style.transform=`translateY(${(1-tp)*24}px)`;
+    document.querySelectorAll('#s3 .card').forEach((el,i)=>{
+      const p=eob(seg(t,TL.s3_cards[i],TL.s3_cards[i]+0.55));
+      el.style.opacity=clamp(seg(t,TL.s3_cards[i],TL.s3_cards[i]+0.2));
+      el.style.transform=`translateY(${(1-p)*70}px) scale(${.94+.06*p})`;
+    });
+  }
+  // S4
+  if(scene('s4',t,TL.s4)){
+    const tp=eo(seg(t,TL.s4_title,TL.s4_title+0.45)); const tt=$('t4'); tt.style.opacity=tp; tt.style.transform=`translateY(${(1-tp)*24}px)`;
+    const [c1,c2,c3]=TL.s4_cmds;
+    const pr=(c,id,hl)=>{
+      const ty=typed(c.text,t,c.t,TL.s4_cps); const on=t>=c.t;
+      const el=$(id); el.style.opacity=on?1:0;
+      let shown=esc(ty);
+      if(hl) shown=shown.replace('-p casa','<span class="amb">-p casa</span>');
+      const active=on&&t<c.out;
+      el.innerHTML=`<span class="mut">PS&gt; </span>${shown}${caret(t,active)}`;
+    };
+    pr(c1,'r4a'); pr(c2,'r4c',true); pr(c3,'r4e');
+    $('r4b').innerHTML=`<span class="grn">  https://meuapp.seudominio.com</span><span class="mut">   →  localhost:8001</span>`; show('r4b',t,c1.out);
+    $('r4d').innerHTML=`<span class="grn">  https://meuapp.outrodominio.com</span><span class="mut">   →  localhost:8001</span>`; show('r4d',t,c2.out);
+    $('r4f').innerHTML=`<span class="cya">  [default]</span> seudominio.com      <span class="grn">● online</span>`; show('r4f',t,c3.out);
+    $('r4g').innerHTML=`<span class="amb">  [casa]   </span> outrodominio.com    <span class="grn">● online</span>`; show('r4g',t,TL.s4_list2);
+  }
+  // S5
+  if(scene('s5',t,TL.s5,0.2,0.001)){
+    ['w1','w2','w3'].forEach((id,i)=>rise(id,t,TL.s5_words[i],0.5));
+    const cp=eo(seg(t,TL.s5_cmd,TL.s5_cmd+0.4)); const cm=$('cmd5'); cm.style.opacity=cp; cm.style.transform=`translateY(${(1-cp)*20}px)`;
+    $('cur5').style.opacity=Math.floor(t*2.2)%2===0?1:0;
+    const tg=$('tag5'); tg.style.opacity=eo(seg(t,TL.s5_cmd+0.35,TL.s5_cmd+0.8));
+  }
+}
+window.render=render;
+</script>
+</body>
+</html>

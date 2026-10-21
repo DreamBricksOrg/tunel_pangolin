@@ -25,7 +25,8 @@ https://meuapp.seudominio.com  ──►  servidor (Pangolin + Traefik + Gerbil)
 | [`tunel/`](tunel/) | Comando `tunel` — `tunel.ps1` + `tunel.cmd` (Windows), `tunel.sh` (Linux/macOS) |
 | [`site-teste/`](site-teste/) | Servidor Node sem dependências para testar o túnel (mostra headers e se veio pelo túnel) |
 | [`docs/01-prompt-instalar-servidor.md`](docs/01-prompt-instalar-servidor.md) | Prompt para um agente de IA instalar o servidor |
-| [`docs/02-usar-em-outros-computadores.md`](docs/02-usar-em-outros-computadores.md) | Como configurar o `tunel` em outro PC (Windows, Ubuntu, Fedora) |
+| [`docs/02-usar-em-outros-computadores.md`](docs/02-usar-em-outros-computadores.md) | Como configurar o `tunel` em outro PC (Windows, Ubuntu, Fedora) e usar vários servidores (perfis) |
+| [`docs/03-servidor-com-nginx.md`](docs/03-servidor-com-nginx.md) | Instalar o Pangolin num servidor que já tem nginx e apps em produção |
 
 ## Como funciona
 
@@ -78,6 +79,21 @@ Siga [`docs/02-usar-em-outros-computadores.md`](docs/02-usar-em-outros-computado
 3. Copie `tunel/tunel.config.example.json` para `tunel/tunel.config.json` e preencha.
 4. Coloque a pasta `tunel` no PATH.
 
+### Vários servidores no mesmo computador (perfis, Windows)
+
+Cada servidor Pangolin é um **perfil**: um arquivo `tunel/tunel.config.<perfil>.json` (copie o
+`tunel.config.example.json`). O `tunel.config.json` é o perfil padrão.
+
+```
+tunel 8001 meuapp                 # perfil padrão
+tunel -p outro 8001 meuapp        # https://meuapp.<domínio do perfil "outro">
+tunel list                        # todos os perfis
+tunel -p outro stop               # encerra só o perfil "outro"
+```
+
+Cada perfil tem conexão, estado e supervisor próprios; a mesma porta local pode ser exposta em
+perfis diferentes. Também vale a variável `TUNEL_PROFILE`.
+
 ## Segurança
 
 - `tunel/tunel.config.json` contém o Secret do site e **não é versionado** (`.gitignore`).
@@ -90,5 +106,5 @@ Siga [`docs/02-usar-em-outros-computadores.md`](docs/02-usar-em-outros-computado
 
 - Um túnel novo leva ~5–20 s para ficar ativo (recarga do blueprint).
 - Recursos desativados continuam listados no painel (com `enabled: false`); apague-os lá se quiser.
-- `tunel list` / `stop` e as verificações existem só na versão Windows; o `tunel.sh` tem o modo
-  básico.
+- `tunel list` / `stop`, as verificações e os perfis (`-p`) existem só na versão Windows; o
+  `tunel.sh` tem o modo básico (aceita `-p <perfil>` para escolher o arquivo de configuração).

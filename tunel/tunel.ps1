@@ -1,5 +1,6 @@
 # tunel - expoe portas locais em subdominios HTTPS usando o Pangolin (Windows).
-# Rode "tunel --help" para ver como usar. Credenciais em tunel.config.json (mesma pasta).
+# Rode "tunel --help" para ver como usar. Credenciais em tunel.config.json (mesma pasta);
+# outros servidores: tunel.config.<perfil>.json e a opcao -p <perfil>.
 #
 # Como funciona: uma unica conexao do Pangolin (processo em segundo plano, gerenciado por um
 # "supervisor") atende todos os tuneis deste PC. Cada terminal com "tunel" aberto adiciona seus
@@ -10,15 +11,40 @@
 $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-$StateDir    = Join-Path $env:LOCALAPPDATA "tunel"
-$StateFile   = Join-Path $StateDir "tunnels.json"
-$Blueprint   = Join-Path $StateDir "blueprint.yaml"
-$SupPidFile  = Join-Path $StateDir "supervisor.pid"
-$PanPidFile  = Join-Path $StateDir "pangolin.pid"
-$HealthFile  = Join-Path $StateDir "healthy"
-$LogFile     = Join-Path $StateDir "pangolin.log"
-$ErrLogFile  = Join-Path $StateDir "pangolin.err.log"
-New-Item -ItemType Directory -Force $StateDir | Out-Null
+$BaseDir = Join-Path $env:LOCALAPPDATA "tunel"
+
+# Perfil = um servidor Pangolin. "default" usa tunel.config.json; os demais usam
+# tunel.config.<perfil>.json, com estado proprio em $BaseDir\profiles\<perfil>.
+function Set-Profile([string]$name) {
+  $script:ProfileName = $name
+  if ($name -eq "default") {
+    $script:ConfigPath  = Join-Path $PSScriptRoot "tunel.config.json"
+    $script:StateDir    = $BaseDir
+    $script:MutexSuffix = ""
+  } else {
+    $script:ConfigPath  = Join-Path $PSScriptRoot "tunel.config.$name.json"
+    $script:StateDir    = Join-Path $BaseDir "profiles\$name"
+    $script:MutexSuffix = "-$name"
+  }
+  $script:StateFile  = Join-Path $StateDir "tunnels.json"
+  $script:Blueprint  = Join-Path $StateDir "blueprint.yaml"
+  $script:SupPidFile = Join-Path $StateDir "supervisor.pid"
+  $script:PanPidFile = Join-Path $StateDir "pangolin.pid"
+  $script:HealthFile = Join-Path $StateDir "healthy"
+  $script:LogFile    = Join-Path $StateDir "pangolin.log"
+  $script:ErrLogFile = Join-Path $StateDir "pangolin.err.log"
+  New-Item -ItemType Directory -Force $StateDir | Out-Null
+}
+
+# Perfis que tem arquivo de configuracao.
+function Get-Profiles {
+  $p = @()
+  if (Test-Path (Join-Path $PSScriptRoot "tunel.config.json")) { $p += "default" }
+  Get-ChildItem $PSScriptRoot -Filter "tunel.config.*.json" -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -match '^tunel\.config\.([a-z0-9][a-z0-9-]*)\.json$' -and $Matches[1] -ne "example" } |
+    ForEach-Object { $p += ([regex]::Match($_.Name, '^tunel\.config\.(.+)\.json$')).Groups[1].Value }
+  return $p
+}
 
 # ---------------------------------------------------------------- ajuda
 
@@ -28,6 +54,8 @@ function Show-Example {
   Write-Host ""
   Write-Host "  Exemplo:"
   Write-Host "    tunel 8001 meuapp      ->  https://meuapp.$((Get-Config).domain)  ->  localhost:8001" -ForegroundColor Green
+  $others = @(Get-Profiles | Where-Object { $_ -ne $ProfileName })
+  if ($others) { Write-Host "    tunel -p $($others[0]) 8001 meuapp   (outro servidor)" -ForegroundColor Green }
   Write-Host ""
   Write-Host "  Mais opcoes: tunel --help"
   Write-Host ""
@@ -42,12 +70,21 @@ function Show-Help {
   USO
     tunel <porta> [nome]             Abre um tunel. Sem nome, usa p<porta>.
     tunel <porta:nome> [...]         Varios tuneis no mesmo comando.
-    tunel list                       Mostra a conexao e os tuneis ativos.
-    tunel stop                       Encerra TODOS os tuneis e a conexao.
+    tunel list                       Mostra a conexao e os tuneis ativos (todos os perfis).
+    tunel stop                       Encerra TODOS os tuneis e conexoes (todos os perfis).
     tunel --help                     Esta ajuda.
 
   OPCOES
+    -p, --profile <perfil>           Usa outro servidor (perfil). Padrao: tunel.config.json.
+                                     Tambem vale a variavel TUNEL_PROFILE.
     -DryRun                          So mostra o blueprint, nao abre nada.
+
+  PERFIS (varios servidores / dominios no mesmo PC)
+    Cada perfil e um arquivo tunel.config.<perfil>.json (copie tunel.config.example.json).
+    tunel -p dbpe 8001 meuapp        https://meuapp.<dominio do perfil dbpe>
+    tunel -p dbpe list               so o perfil dbpe
+    tunel -p dbpe stop               encerra so o perfil dbpe
+    Perfis disponiveis: $((Get-Profiles) -join ', ')
 
   EXEMPLOS
     tunel 8001 meuapp                https://meuapp.$dom  -> localhost:8001
@@ -65,7 +102,7 @@ function Show-Help {
     - Pangolin rodando fora do "tunel" (manual ou servico): recusa, com instrucoes.
 
   ARQUIVOS
-    Config:  $(Join-Path $PSScriptRoot "tunel.config.json")
+    Config:  $ConfigPath
     Estado:  $StateDir
 
 "@
@@ -74,9 +111,11 @@ function Show-Help {
 # ---------------------------------------------------------------- utilitarios
 
 function Get-Config {
-  $p = Join-Path $PSScriptRoot "tunel.config.json"
-  if (-not (Test-Path $p)) { throw "Nao achei $p" }
-  return Get-Content $p -Raw | ConvertFrom-Json
+  if (-not (Test-Path $ConfigPath)) {
+    if ($ProfileName -eq "default") { throw "Nao achei $ConfigPath" }
+    throw "Perfil '$ProfileName' nao existe. Crie $ConfigPath (copie tunel.config.example.json e preencha)."
+  }
+  return Get-Content $ConfigPath -Raw | ConvertFrom-Json
 }
 
 function Test-Alive([int]$procId) {
@@ -94,7 +133,7 @@ function Read-PidFile([string]$path) {
 function Test-Supervisor { return Test-Alive (Read-PidFile $SupPidFile) }
 
 function Invoke-Locked([scriptblock]$Body) {
-  $m = New-Object Threading.Mutex($false, "Local\tunel-state")
+  $m = New-Object Threading.Mutex($false, "Local\tunel-state$MutexSuffix")
   $got = $false
   try {
     try { $got = $m.WaitOne(15000) } catch [Threading.AbandonedMutexException] { $got = $true }
@@ -162,10 +201,17 @@ function Write-Blueprint($tunnels) {
   Write-FileAtomic $Blueprint $yaml
 }
 
-# Processos do Pangolin que NAO foram iniciados pelo tunel.
+# Processos do Pangolin que NAO foram iniciados pelo tunel (de nenhum perfil) e que usam o
+# site deste perfil. Sem linha de comando legivel (ex.: servico), considera conflito.
 function Get-ExternalPangolin {
-  $ours = Read-PidFile $PanPidFile
-  return @(Get-Process -Name pangolin -ErrorAction SilentlyContinue | Where-Object { $_.Id -ne $ours })
+  $known = @(Get-ChildItem $BaseDir -Recurse -Filter "pangolin.pid" -ErrorAction SilentlyContinue |
+    ForEach-Object { Read-PidFile $_.FullName })
+  $id = (Get-Config).id
+  $procs = @(Get-CimInstance Win32_Process -Filter "Name='pangolin.exe'" -ErrorAction SilentlyContinue)
+  return @($procs | Where-Object {
+    $known -notcontains [int]$_.ProcessId -and
+    ((-not $_.CommandLine) -or ($_.CommandLine -notmatch '--id') -or ($_.CommandLine -match ('--id[ =]' + [regex]::Escape($id))))
+  } | ForEach-Object { [pscustomobject]@{ Id = [int]$_.ProcessId } })
 }
 
 # Descobre quem escuta na porta e qual endereco usar como destino.
@@ -195,6 +241,8 @@ function Get-UrlStatus([string]$url) {
         $body = (New-Object IO.StreamReader($resp.GetResponseStream())).ReadToEnd()
         if ($body.Trim() -eq "404 page not found") { return -404 }
       } catch {}
+      # o corpo as vezes vem vazio; o 404 do Traefik tem sempre 19 bytes em text/plain
+      if ($resp.ContentLength -eq 19 -and $resp.ContentType -like "text/plain*") { return -404 }
     }
     return $code
   }
@@ -203,7 +251,7 @@ function Get-UrlStatus([string]$url) {
 # ---------------------------------------------------------------- supervisor
 
 function Start-Supervisor {
-  $args2 = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", "`"$PSCommandPath`"", "__supervisor")
+  $args2 = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", "`"$PSCommandPath`"", "-p", $ProfileName, "__supervisor")
   Start-Process -FilePath "powershell.exe" -ArgumentList $args2 -WindowStyle Hidden | Out-Null
 }
 
@@ -221,14 +269,22 @@ function Start-Pangolin($cfg) {
 
 function Invoke-Supervisor {
   # Garante um unico supervisor (o mutex fica preso enquanto este processo viver)
-  $single = New-Object Threading.Mutex($false, "Local\tunel-supervisor")
+  $single = New-Object Threading.Mutex($false, "Local\tunel-supervisor$MutexSuffix")
   try { if (-not $single.WaitOne(0)) { return } } catch [Threading.AbandonedMutexException] {}
   [IO.File]::WriteAllText($SupPidFile, "$PID")
   $cfg = Get-Config
+  $cfgStamp = (Get-Item $ConfigPath).LastWriteTimeUtc
   $pan = $null
   $idleSince = $null
   try {
     while ($true) {
+      # config editada (ex.: novo ID/secret): relê e reconecta
+      $stamp = (Get-Item $ConfigPath -ErrorAction SilentlyContinue).LastWriteTimeUtc
+      if ($stamp -and $stamp -ne $cfgStamp) {
+        $cfgStamp = $stamp
+        try { $cfg = Get-Config } catch {}
+        if ($pan -and -not $pan.HasExited) { Stop-Process -Id $pan.Id -Force -ErrorAction SilentlyContinue; $pan = $null }
+      }
       $active = Invoke-Locked {
         $t = Update-Prune (Read-State)
         Save-State $t
@@ -256,11 +312,13 @@ function Invoke-Supervisor {
 
 # ---------------------------------------------------------------- comandos
 
-function Invoke-List {
+function Show-ProfileList {
   $sup = Read-PidFile $SupPidFile
   $pan = Read-PidFile $PanPidFile
   $t = @(Invoke-Locked { Update-Prune (Read-State) } | Where-Object { $_.active })
+  $dom = (Get-Config).domain
   Write-Host ""
+  Write-Host "  [$ProfileName] $dom" -ForegroundColor Cyan
   if (Test-Alive $sup) {
     $st = if (Test-Path $HealthFile) { "online" } else { "conectando..." }
     Write-Host "  Pangolin: $st (PID $pan)" -ForegroundColor Green
@@ -269,16 +327,20 @@ function Invoke-List {
   }
   $ext = Get-ExternalPangolin
   if ($ext) { Write-Host "  Atencao: Pangolin rodando fora do tunel (PID $($ext.Id -join ', '))" -ForegroundColor Yellow }
+  if (-not $t) { Write-Host "  Nenhum tunel ativo."; return }
   Write-Host ""
-  if (-not $t) { Write-Host "  Nenhum tunel ativo.`n"; return }
-  $dom = (Get-Config).domain
   foreach ($x in $t) {
     Write-Host ("  {0,-45} -> {1}:{2}   (terminal PID {3})" -f "https://$($x.sub).$dom", $x.host, $x.port, $x.owner)
   }
+}
+
+function Invoke-List([string[]]$names) {
+  if (-not $names) { Write-Host "`n  Nenhum perfil configurado (tunel.config.json)." -ForegroundColor Yellow }
+  foreach ($n in $names) { Set-Profile $n; Show-ProfileList }
   Write-Host ""
 }
 
-function Invoke-Stop {
+function Stop-Profile {
   Invoke-Locked {
     $t = Read-State
     foreach ($x in $t) { $x.active = $false }
@@ -290,7 +352,12 @@ function Invoke-Stop {
     if (Test-Alive $p) { Stop-Process -Id $p -Force -ErrorAction SilentlyContinue }
   }
   Remove-Item $PanPidFile, $SupPidFile, $HealthFile -ErrorAction SilentlyContinue
-  Write-Host "`n  Todos os tuneis e a conexao foram encerrados.`n" -ForegroundColor Yellow
+}
+
+function Invoke-Stop([string[]]$names, [bool]$all) {
+  foreach ($n in $names) { Set-Profile $n; Stop-Profile }
+  if ($all) { Write-Host "`n  Todos os tuneis e conexoes foram encerrados.`n" -ForegroundColor Yellow }
+  else { Write-Host "`n  Tuneis e conexao do perfil '$($names -join ', ')' encerrados.`n" -ForegroundColor Yellow }
 }
 
 function Get-Specs([string[]]$a) {
@@ -362,17 +429,20 @@ function Invoke-Open([string[]]$specArgs, [bool]$dryRun) {
 
   try {
     $reuse = Test-Supervisor
-    if ($reuse) {
-      Write-Host "`n  Pangolin ja esta online - adicionando a conexao existente." -ForegroundColor DarkGray
+    if ($reuse -and (Test-Path $HealthFile)) {
+      Write-Host "`n  Pangolin ja esta online [$($ProfileName)] - adicionando a conexao existente." -ForegroundColor DarkGray
     } else {
-      Write-Host "`n  Conectando ao Pangolin..." -ForegroundColor DarkGray
-      Start-Supervisor
+      Write-Host "`n  Conectando ao Pangolin [$($ProfileName): $($cfg.domain)]..." -ForegroundColor DarkGray
+      if (-not $reuse) { Start-Supervisor }
       $deadline = (Get-Date).AddSeconds(30)
       while (-not (Test-Path $HealthFile) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 500 }
       if (-not (Test-Path $HealthFile)) {
-        Write-Host "  Nao conectou em 30s. Ultimas linhas do log:" -ForegroundColor Red
-        Get-Content $LogFile, $ErrLogFile -Tail 8 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "    $_" }
-        Write-Host "  (continuo tentando em segundo plano)" -ForegroundColor DarkGray
+        Write-Host "  NAO conectou em 30s - os links vao dar 404 ate conectar. Ultimas linhas do log:" -ForegroundColor Red
+        Get-Content $LogFile, $ErrLogFile -Tail 4 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "    $_" }
+        if ((Get-Content $LogFile -Tail 20 -ErrorAction SilentlyContinue) -match 'No newt found') {
+          Write-Host "  O ID '$($cfg.id)' nao existe em $($cfg.endpoint). Crie o site NESSE painel e atualize $ConfigPath." -ForegroundColor Yellow
+        }
+        Write-Host "  (continuo tentando em segundo plano; editar o config reconecta sozinho)" -ForegroundColor DarkGray
       }
     }
 
@@ -418,20 +488,40 @@ function Invoke-Open([string[]]$specArgs, [bool]$dryRun) {
 
 # ---------------------------------------------------------------- main
 
-$argv = @($args | ForEach-Object { "$_" })
+$raw = @($args | ForEach-Object { "$_" })
 $dry = $false
-if ($argv -contains "-DryRun" -or $argv -contains "--dry-run") {
-  $dry = $true
-  $argv = @($argv | Where-Object { $_ -ne "-DryRun" -and $_ -ne "--dry-run" })
+$explicitProfile = $null
+$argv = @()
+for ($i = 0; $i -lt $raw.Count; $i++) {
+  $a = $raw[$i]
+  if ($a -eq "-DryRun" -or $a -eq "--dry-run") { $dry = $true; continue }
+  if ($a -match '^(-p|--profile|-Profile|--perfil)$') {
+    if ($i + 1 -ge $raw.Count) { Write-Host "`n  Erro: $a precisa do nome do perfil.`n" -ForegroundColor Red; exit 1 }
+    $explicitProfile = $raw[++$i].ToLower()
+    continue
+  }
+  $argv += $a
 }
+if (-not $explicitProfile -and $env:TUNEL_PROFILE) { $explicitProfile = $env:TUNEL_PROFILE.ToLower() }
 
 try {
+  if ($explicitProfile -and $explicitProfile -notmatch '^[a-z0-9]([a-z0-9-]*[a-z0-9])?$') {
+    throw "Nome de perfil invalido: '$explicitProfile' (letras minusculas, numeros e hifen)."
+  }
+  Set-Profile $(if ($explicitProfile) { $explicitProfile } else { "default" })
+
   if ($argv.Count -eq 0) { Show-Example; exit 0 }
   switch -Regex ($argv[0]) {
     '^(--help|-h|-\?|/\?|help|ajuda)$' { Show-Help; exit 0 }
     '^__supervisor$'                   { Invoke-Supervisor; exit 0 }
-    '^(list|status|ls)$'               { Invoke-List; exit 0 }
-    '^stop$'                           { Invoke-Stop; exit 0 }
+    '^(list|status|ls)$'               {
+      $names = if ($explicitProfile) { @($explicitProfile) } else { @(Get-Profiles) }
+      Invoke-List $names; exit 0
+    }
+    '^stop$'                           {
+      $names = if ($explicitProfile) { @($explicitProfile) } else { @(Get-Profiles) }
+      Invoke-Stop $names (-not $explicitProfile); exit 0
+    }
     default                            { Invoke-Open $argv $dry }
   }
 } catch {
