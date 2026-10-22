@@ -147,14 +147,16 @@ function Get-Launcher {
     $parent = Get-CimInstance Win32_Process -Filter "ProcessId=$($me.ParentProcessId)"
   } catch { return $null }
   if (-not $parent -or $parent.Name -ne "cmd.exe") { return $null }
-  # o PID pode ser reaproveitado; a data de criacao identifica o processo de verdade
-  return [pscustomobject]@{ Id = [int]$parent.ProcessId; Created = [int64]$parent.CreationDate.Ticks }
+  # o PID pode ser reaproveitado; a hora de inicio identifica o processo de verdade
+  try { $start = (Get-Process -Id $parent.ProcessId -ErrorAction Stop).StartTime } catch { return $null }
+  return [pscustomobject]@{ Id = [int]$parent.ProcessId; Created = [int64]$start.Ticks }
 }
 
+# So responde "morto" quando tem certeza; qualquer falha de consulta conta como vivo.
 function Test-LauncherAlive($launcher) {
   if (-not $launcher) { return $true }
-  $p = Get-CimInstance Win32_Process -Filter "ProcessId=$($launcher.Id)" -ErrorAction SilentlyContinue
-  return [bool]($p -and [int64]$p.CreationDate.Ticks -eq [int64]$launcher.Created)
+  try { $p = Get-Process -Id $launcher.Id -ErrorAction Stop } catch { return $false }
+  try { return ([int64]$p.StartTime.Ticks -eq [int64]$launcher.Created) } catch { return $true }
 }
 
 function Invoke-Locked([scriptblock]$Body) {
@@ -193,12 +195,7 @@ function Save-State($tunnels) {
 
 # Marca como inativos os tuneis cujo terminal dono nao existe mais.
 function Update-Prune($tunnels) {
-  foreach ($t in $tunnels) {
-    if (-not $t.active) { continue }
-    if (-not (Test-Alive $t.owner)) { $t.active = $false; continue }
-    # dono vivo, mas o cmd que o abriu foi morto: ele sai sozinho em ate 2s; ja libera porta/nome
-    if ($t.lpid -and -not (Test-LauncherAlive ([pscustomobject]@{ Id = $t.lpid; Created = $t.lticks }))) { $t.active = $false }
-  }
+  foreach ($t in $tunnels) { if ($t.active -and -not (Test-Alive $t.owner)) { $t.active = $false } }
   return $tunnels
 }
 
@@ -228,7 +225,12 @@ function Write-Blueprint($tunnels) {
   $yaml = New-BlueprintYaml $tunnels (Get-Config).domain
   $old = if (Test-Path $Blueprint) { [IO.File]::ReadAllText($Blueprint) } else { "" }
   if ($old -eq $yaml) { return }
-  Write-FileAtomic $Blueprint $yaml
+  # Grava no proprio arquivo (sem renomear por cima): o Pangolin vigia o arquivo e, depois de
+  # uma troca por rename, deixa de perceber as mudancas seguintes (o link ficava em 404).
+  for ($i = 0; $i -lt 20; $i++) {
+    try { [IO.File]::WriteAllText($Blueprint, $yaml); return } catch { Start-Sleep -Milliseconds 100 }
+  }
+  throw "Nao consegui gravar $Blueprint"
 }
 
 # O tunel inicia o Pangolin com --blueprint-file apontando para uma pasta dentro de $BaseDir.
@@ -496,16 +498,17 @@ function Invoke-Open([string[]]$specArgs, [bool]$dryRun) {
   $conflict = Invoke-Locked {
     $t = @(Update-Prune (Read-State))
     foreach ($m in $mine) {
-      $busy = $t | Where-Object { $_.active -and ($_.port -eq $m.port -or $_.sub -eq $m.sub) } | Select-Object -First 1
+      # rodar de novo o mesmo "porta nome" assume o tunel antigo (ex.: terminal morto a forca);
+      # o terminal antigo, se ainda existir, percebe e encerra sozinho
+      $busy = $t | Where-Object { $_.active -and ($_.port -eq $m.port -or $_.sub -eq $m.sub) -and -not ($_.port -eq $m.port -and $_.sub -eq $m.sub) } | Select-Object -First 1
       if ($busy) {
         if ($busy.port -eq $m.port) { return "A porta $($m.port) ja esta no tunel 'https://$($busy.sub).$($cfg.domain)' (terminal PID $($busy.owner))." }
         return "O nome '$($m.sub)' ja esta em uso pelo tunel da porta $($busy.port) (terminal PID $($busy.owner))."
       }
     }
-    $lau = Get-Launcher
     foreach ($m in $mine) {
       $t = @($t | Where-Object { $_.sub -ne $m.sub })
-      $t += [pscustomobject]@{ sub = $m.sub; port = $m.port; host = $m.host; owner = $m.owner; active = $true; lpid = $(if ($lau) { $lau.Id } else { 0 }); lticks = $(if ($lau) { $lau.Created } else { 0 }) }
+      $t += [pscustomobject]@{ sub = $m.sub; port = $m.port; host = $m.host; owner = $m.owner; active = $true }
     }
     Save-State $t
     Write-Blueprint $t
@@ -564,7 +567,7 @@ function Invoke-Open([string[]]$specArgs, [bool]$dryRun) {
       try {
         $still = Invoke-Locked { @(Read-State | Where-Object { $_.active -and $_.owner -eq $PID -and $subs -contains $_.sub }).Count }
       } catch { continue }
-      if ($still -eq 0) { Write-Host "  Tuneis encerrados por 'tunel stop'." -ForegroundColor Yellow; break }
+      if ($still -eq 0) { Write-Host "  Tuneis encerrados ('tunel stop' ou reabertos em outro terminal)." -ForegroundColor Yellow; break }
       if (-not (Test-Supervisor)) { Start-Supervisor; Start-Sleep 3 }
     }
   } finally {
