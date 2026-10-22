@@ -148,13 +148,13 @@ function Get-Launcher {
   } catch { return $null }
   if (-not $parent -or $parent.Name -ne "cmd.exe") { return $null }
   # o PID pode ser reaproveitado; a data de criacao identifica o processo de verdade
-  return [pscustomobject]@{ Id = [int]$parent.ProcessId; Created = $parent.CreationDate }
+  return [pscustomobject]@{ Id = [int]$parent.ProcessId; Created = [int64]$parent.CreationDate.Ticks }
 }
 
 function Test-LauncherAlive($launcher) {
   if (-not $launcher) { return $true }
   $p = Get-CimInstance Win32_Process -Filter "ProcessId=$($launcher.Id)" -ErrorAction SilentlyContinue
-  return [bool]($p -and $p.CreationDate -eq $launcher.Created)
+  return [bool]($p -and [int64]$p.CreationDate.Ticks -eq [int64]$launcher.Created)
 }
 
 function Invoke-Locked([scriptblock]$Body) {
@@ -193,7 +193,12 @@ function Save-State($tunnels) {
 
 # Marca como inativos os tuneis cujo terminal dono nao existe mais.
 function Update-Prune($tunnels) {
-  foreach ($t in $tunnels) { if ($t.active -and -not (Test-Alive $t.owner)) { $t.active = $false } }
+  foreach ($t in $tunnels) {
+    if (-not $t.active) { continue }
+    if (-not (Test-Alive $t.owner)) { $t.active = $false; continue }
+    # dono vivo, mas o cmd que o abriu foi morto: ele sai sozinho em ate 2s; ja libera porta/nome
+    if ($t.lpid -and -not (Test-LauncherAlive ([pscustomobject]@{ Id = $t.lpid; Created = $t.lticks }))) { $t.active = $false }
+  }
   return $tunnels
 }
 
@@ -497,9 +502,10 @@ function Invoke-Open([string[]]$specArgs, [bool]$dryRun) {
         return "O nome '$($m.sub)' ja esta em uso pelo tunel da porta $($busy.port) (terminal PID $($busy.owner))."
       }
     }
+    $lau = Get-Launcher
     foreach ($m in $mine) {
       $t = @($t | Where-Object { $_.sub -ne $m.sub })
-      $t += [pscustomobject]@{ sub = $m.sub; port = $m.port; host = $m.host; owner = $m.owner; active = $true }
+      $t += [pscustomobject]@{ sub = $m.sub; port = $m.port; host = $m.host; owner = $m.owner; active = $true; lpid = $(if ($lau) { $lau.Id } else { 0 }); lticks = $(if ($lau) { $lau.Created } else { 0 }) }
     }
     Save-State $t
     Write-Blueprint $t
