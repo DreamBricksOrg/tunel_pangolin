@@ -205,7 +205,7 @@ Abra `https://teste-notebook.dbpe.com.br`. Com o site de teste, deve aparecer o 
 | Sintoma | Causa provável | Solução |
 |---|---|---|
 | Link pede login do Pangolin | Recurso duplicado criado pelo painel para o mesmo subdomínio | Painel → Resources → apague o que **não** começa com "tunel" |
-| `404 page not found` | Túnel não está rodando, ou app local fora do ar | Confira o terminal do `tunel` e se `http://localhost:PORTA` abre no PC |
+| `404 page not found` | Túnel não está rodando (ex.: terminal fechado ou morto à força), ou app local fora do ar | Rode o `tunel PORTA nome` de novo (no Windows ele limpa sozinho conexões antigas); confira se `http://localhost:PORTA` abre no PC |
 | `502 Bad Gateway` | Túnel ativo, mas nada escutando na porta | Suba o app local na porta informada |
 | `pangolin: command not found` / não reconhecido | CLI fora do PATH | Terminal novo; ou caminho completo em `"pangolin"` no config (`which pangolin` no Linux) |
 | `tunel: command not found` (Linux) | `~/.local/bin` fora do PATH | Abra terminal novo ou `export PATH="$HOME/.local/bin:$PATH"` |

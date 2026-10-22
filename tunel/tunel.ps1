@@ -101,6 +101,12 @@ function Show-Help {
     - Nada escutando na porta local: avisa (o link dara 502 ate o app subir).
     - Pangolin rodando fora do "tunel" (manual ou servico): recusa, com instrucoes.
 
+  TERMINAL FECHADO A FORCA
+    Os tuneis daquele terminal ficam desativados (o link da 404). A conexao em segundo plano
+    morre junto com o supervisor e, se sobrar algum processo antigo, ele e encerrado na proxima
+    vez que voce rodar "tunel". Basta rodar o comando de novo. Se o supervisor cair com o
+    terminal aberto, o terminal religa tudo sozinho.
+
   ARQUIVOS
     Config:  $ConfigPath
     Estado:  $StateDir
@@ -201,17 +207,70 @@ function Write-Blueprint($tunnels) {
   Write-FileAtomic $Blueprint $yaml
 }
 
+# O tunel inicia o Pangolin com --blueprint-file apontando para uma pasta dentro de $BaseDir.
+function Test-TunelCmdLine([string]$cmd) {
+  return [bool]($cmd -and $cmd.IndexOf($BaseDir, [StringComparison]::OrdinalIgnoreCase) -ge 0 -and
+                $cmd.IndexOf("blueprint.yaml", [StringComparison]::OrdinalIgnoreCase) -ge 0)
+}
+
 # Processos do Pangolin que NAO foram iniciados pelo tunel (de nenhum perfil) e que usam o
 # site deste perfil. Sem linha de comando legivel (ex.: servico), considera conflito.
 function Get-ExternalPangolin {
-  $known = @(Get-ChildItem $BaseDir -Recurse -Filter "pangolin.pid" -ErrorAction SilentlyContinue |
-    ForEach-Object { Read-PidFile $_.FullName })
   $id = (Get-Config).id
   $procs = @(Get-CimInstance Win32_Process -Filter "Name='pangolin.exe'" -ErrorAction SilentlyContinue)
   return @($procs | Where-Object {
-    $known -notcontains [int]$_.ProcessId -and
+    -not (Test-TunelCmdLine $_.CommandLine) -and
     ((-not $_.CommandLine) -or ($_.CommandLine -notmatch '--id') -or ($_.CommandLine -match ('--id[ =]' + [regex]::Escape($id))))
   } | ForEach-Object { [pscustomobject]@{ Id = [int]$_.ProcessId } })
+}
+
+# Pangolin deste perfil que ficou orfao (o supervisor morreu a forca e deixou o processo vivo).
+# Dois Pangolin com o mesmo site brigam entre si, entao sao encerrados antes de religar.
+function Stop-ProfileOrphans {
+  $procs = @(Get-CimInstance Win32_Process -Filter "Name='pangolin.exe'" -ErrorAction SilentlyContinue |
+    Where-Object { $_.CommandLine -and $_.CommandLine.IndexOf($Blueprint, [StringComparison]::OrdinalIgnoreCase) -ge 0 })
+  foreach ($p in $procs) { Stop-Process -Id ([int]$p.ProcessId) -Force -ErrorAction SilentlyContinue }
+  if ($procs.Count -gt 0) { Start-Sleep -Milliseconds 500 }
+  Remove-Item $PanPidFile, $HealthFile -ErrorAction SilentlyContinue
+  return $procs.Count
+}
+
+# Job do Windows com KILL_ON_JOB_CLOSE: o Pangolin morre junto com o supervisor, mesmo que ele
+# seja encerrado a forca (nao sobra processo orfao).
+function Add-ToKillJob($proc) {
+  try {
+    if (-not ("TunelJob" -as [type])) {
+      Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class TunelJob {
+  [StructLayout(LayoutKind.Sequential)] struct IO_COUNTERS { public ulong a, b, c, d, e, f; }
+  [StructLayout(LayoutKind.Sequential)] struct BASIC {
+    public long PerProcessUserTimeLimit, PerJobUserTimeLimit; public uint LimitFlags;
+    public UIntPtr MinWs, MaxWs; public uint ActiveLimit; public UIntPtr Affinity; public uint Priority, SchedClass; }
+  [StructLayout(LayoutKind.Sequential)] struct EXT {
+    public BASIC Basic; public IO_COUNTERS Io; public UIntPtr ProcMem, JobMem, PeakProc, PeakJob; }
+  [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] static extern IntPtr CreateJobObject(IntPtr a, string name);
+  [DllImport("kernel32.dll")] static extern bool SetInformationJobObject(IntPtr job, int cls, IntPtr info, uint len);
+  [DllImport("kernel32.dll")] static extern bool AssignProcessToJobObject(IntPtr job, IntPtr proc);
+  static IntPtr job = IntPtr.Zero;
+  public static bool Attach(IntPtr proc) {
+    if (job == IntPtr.Zero) {
+      job = CreateJobObject(IntPtr.Zero, null);
+      EXT e = new EXT(); e.Basic.LimitFlags = 0x2000;
+      int len = Marshal.SizeOf(typeof(EXT)); IntPtr p = Marshal.AllocHGlobal(len);
+      Marshal.StructureToPtr(e, p, false);
+      bool ok = SetInformationJobObject(job, 9, p, (uint)len);
+      Marshal.FreeHGlobal(p);
+      if (!ok) return false;
+    }
+    return AssignProcessToJobObject(job, proc);
+  }
+}
+'@
+    }
+    [void][TunelJob]::Attach($proc.Handle)
+  } catch { }
 }
 
 # Descobre quem escuta na porta e qual endereco usar como destino.
@@ -264,6 +323,7 @@ function Start-Pangolin($cfg) {
   $p = Start-Process -FilePath $exe -ArgumentList $a -WindowStyle Hidden -PassThru `
          -RedirectStandardOutput $LogFile -RedirectStandardError $ErrLogFile
   [IO.File]::WriteAllText($PanPidFile, "$($p.Id)")
+  Add-ToKillJob $p
   return $p
 }
 
@@ -272,13 +332,14 @@ function Invoke-Supervisor {
   $single = New-Object Threading.Mutex($false, "Local\tunel-supervisor$MutexSuffix")
   try { if (-not $single.WaitOne(0)) { return } } catch [Threading.AbandonedMutexException] {}
   [IO.File]::WriteAllText($SupPidFile, "$PID")
+  [void](Stop-ProfileOrphans)   # sobras de um supervisor morto a forca
   $cfg = Get-Config
   $cfgStamp = (Get-Item $ConfigPath).LastWriteTimeUtc
   $pan = $null
   $idleSince = $null
   try {
     while ($true) {
-      # config editada (ex.: novo ID/secret): relê e reconecta
+      # config editada (ex.: novo ID/secret): rele e reconecta
       $stamp = (Get-Item $ConfigPath -ErrorAction SilentlyContinue).LastWriteTimeUtc
       if ($stamp -and $stamp -ne $cfgStamp) {
         $cfgStamp = $stamp
@@ -433,7 +494,11 @@ function Invoke-Open([string[]]$specArgs, [bool]$dryRun) {
       Write-Host "`n  Pangolin ja esta online [$($ProfileName)] - adicionando a conexao existente." -ForegroundColor DarkGray
     } else {
       Write-Host "`n  Conectando ao Pangolin [$($ProfileName): $($cfg.domain)]..." -ForegroundColor DarkGray
-      if (-not $reuse) { Start-Supervisor }
+      if (-not $reuse) {
+        $n = Stop-ProfileOrphans
+        if ($n -gt 0) { Write-Host "  Encerrei $n conexao antiga que ficou em segundo plano (terminal fechado a forca)." -ForegroundColor Yellow }
+        Start-Supervisor
+      }
       $deadline = (Get-Date).AddSeconds(30)
       while (-not (Test-Path $HealthFile) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 500 }
       if (-not (Test-Path $HealthFile)) {
