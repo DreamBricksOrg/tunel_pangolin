@@ -138,6 +138,25 @@ function Read-PidFile([string]$path) {
 
 function Test-Supervisor { return Test-Alive (Read-PidFile $SupPidFile) }
 
+# O cmd do tunel.cmd que abriu este PowerShell. Se alguem matar so o cmd (taskkill, gerenciador
+# de tarefas), o Windows nao mata o PowerShell filho: ele ficaria orfao segurando o tunel e a
+# proxima chamada seria recusada ("porta ja esta no tunel"). Guardamos o pai para sair junto.
+function Get-Launcher {
+  try {
+    $me = Get-CimInstance Win32_Process -Filter "ProcessId=$PID"
+    $parent = Get-CimInstance Win32_Process -Filter "ProcessId=$($me.ParentProcessId)"
+  } catch { return $null }
+  if (-not $parent -or $parent.Name -ne "cmd.exe") { return $null }
+  # o PID pode ser reaproveitado; a data de criacao identifica o processo de verdade
+  return [pscustomobject]@{ Id = [int]$parent.ProcessId; Created = $parent.CreationDate }
+}
+
+function Test-LauncherAlive($launcher) {
+  if (-not $launcher) { return $true }
+  $p = Get-CimInstance Win32_Process -Filter "ProcessId=$($launcher.Id)" -ErrorAction SilentlyContinue
+  return [bool]($p -and $p.CreationDate -eq $launcher.Created)
+}
+
 function Invoke-Locked([scriptblock]$Body) {
   $m = New-Object Threading.Mutex($false, "Local\tunel-state$MutexSuffix")
   $got = $false
@@ -532,8 +551,10 @@ function Invoke-Open([string[]]$specArgs, [bool]$dryRun) {
 
     # Mantem o terminal "dono" dos tuneis; religa o supervisor se ele cair.
     $subs = @($mine | ForEach-Object { $_.sub })
+    $launcher = Get-Launcher
     while ($true) {
       Start-Sleep 2
+      if (-not (Test-LauncherAlive $launcher)) { break }
       try {
         $still = Invoke-Locked { @(Read-State | Where-Object { $_.active -and $_.owner -eq $PID -and $subs -contains $_.sub }).Count }
       } catch { continue }
