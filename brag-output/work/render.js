@@ -27,7 +27,8 @@ const only = process.argv[2] ? process.argv[2].split(',').map(Number) : null; //
     }
   } else {
     const n = Math.round(TL.dur * TL.fps);
-    for (let i = 0; i < n; i++) {
+    const from = Number(process.env.FROM || 0), to = Math.min(n, Number(process.env.TO || n));
+    for (let i = from; i < to; i++) {
       await page.evaluate(t => window.render(t), i / TL.fps);
       await page.screenshot({ path: path.join(dir, `f${String(i).padStart(5, '0')}.png`) });
     }

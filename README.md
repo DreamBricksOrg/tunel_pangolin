@@ -77,7 +77,7 @@ Siga [`docs/02-usar-em-outros-computadores.md`](docs/02-usar-em-outros-computado
 1. Painel → **Sites → Add Site** (Pangolin Site) → copie ID e Secret.
 2. Instale o CLI do Pangolin.
 3. Copie `tunel/tunel.config.example.json` para `tunel/tunel.config.json` e preencha.
-4. Coloque a pasta `tunel` no PATH.
+4. Coloque a pasta `tunel` no PATH: no Windows, duplo clique em `tunel/add_to_path.cmd`.
 
 ### Vários servidores no mesmo computador (perfis, Windows)
 

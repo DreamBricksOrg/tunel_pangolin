@@ -1,1 +1,1 @@
-Do zero ao link https em 7 passos: clone o projeto, entre no painel, crie o site, instale o Pangolin CLI, cole o secret e rode `tunel 8001 meuapp`. Seu localhost vira um endereço público no seu próprio domínio.
+Do zero ao link https em 8 passos: clone o projeto, entre no painel, crie o site, instale o Pangolin CLI, cole o secret, coloque o tunel no PATH e rode `tunel 8001 meuapp`. Seu localhost vira um endereço público no seu próprio domínio.

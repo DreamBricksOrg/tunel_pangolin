@@ -46,7 +46,7 @@ seq = (seq + [Am] * 4)[:n_blk]
 chords = seq
 
 active = lambda t, names: any(SC[n][0] - 0.05 <= t < SC[n][1] for n in names)
-hot = ["s1", "s4", "s5", "s6", "s7"]        # scenes with drums
+hot = ["s1", "s4", "s5", "s6", "p", "s7"]        # scenes with drums
 calm = ["intro", "s2", "s3", "outro"]
 
 # pad
@@ -121,7 +121,7 @@ while tt < dur - 4:
     tt += beat
 tt = beat / 2
 while tt < dur - 4:
-    if active(tt, ["s4", "s5", "s6", "s7"]):
+    if active(tt, ["s4", "s5", "s6", "p", "s7"]):
         hat(tt)
     tt += beat
 
@@ -141,7 +141,7 @@ def typing(key, seed=0):
         blip(s["t"] + i / s["cps"], (i * 3 + seed) % 6)
 
 for k, sd in (("s1_clone", 0), ("s1_cd", 1), ("s1_ls", 2), ("s2_url", 3), ("s3_mail", 0), ("s3_pass", 4),
-              ("s4_name", 2), ("s6_id", 1), ("s6_secret", 4), ("s7_cd", 0), ("s7_run", 2)):
+              ("s4_name", 2), ("s6_id", 1), ("s6_secret", 4), ("s7_run", 2)):
     typing(k, sd)
 
 def whoosh(t0, d=0.5, g=0.045):
@@ -149,7 +149,7 @@ def whoosh(t0, d=0.5, g=0.045):
     n = np.diff(lp(rng.standard_normal(len(t)), 0.06), prepend=0) * 14
     put(fx, n * np.sin(np.pi * np.clip(t / d, 0, 1)) ** 2 * g, t0)
 
-for name in ("intro", "s1", "s2", "s3", "s4", "s5", "s6", "s7"):
+for name in ("intro", "s1", "s2", "s3", "s4", "s5", "s6", "p", "s7"):
     whoosh(SC[name][1] - 0.25)
 
 def bell(t0, notes, g=0.05, d=1.6):
@@ -160,7 +160,7 @@ def bell(t0, notes, g=0.05, d=1.6):
         put(fx, sig, t0, pan=0.1)
 
 # step-start chimes climb the scale
-for i, name in enumerate(("s1", "s2", "s3", "s4", "s5", "s6", "s7")):
+for i, name in enumerate(("s1", "s2", "s3", "s4", "s5", "s6", "p", "s7")):
     bell(SC[name][0] + 0.05, [(pent[min(i, 5)] - 12, 1.0), (pent[min(i, 5)], 0.5)], g=0.045, d=1.2)
 
 for t0 in EV["s1_out"][:2]:
@@ -172,6 +172,10 @@ bell(EV["s4_creds"], [(93, 1.0), (88, 0.7), (81, 0.6)], g=0.055, d=1.8)
 bell(EV["s5_win"], [(84, 0.7)], g=0.045, d=0.9)
 bell(EV["s5_lin"], [(88, 0.7)], g=0.045, d=0.9)
 bell(EV["s6_labels"], [(91, 0.7)], g=0.04, d=0.9)
+bell(EV["p_files"], [(84, 0.5)], g=0.035, d=0.7)
+bell(EV["p_click"], [(76, 0.9)], g=0.05, d=0.5)
+bell(EV["p_out"][0], [(88, 0.8), (93, 0.5)], g=0.05, d=1.4)
+bell(EV["p_out"][1], [(91, 0.6)], g=0.04, d=0.9)
 bell(EV["s7_out"][1], [(93, 1.0), (88, 0.7), (81, 0.6)], g=0.055, d=1.8)
 bell(EV["s7_out"][2], [(91, 0.6)], g=0.045, d=1.0)
 

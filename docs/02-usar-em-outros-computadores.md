@@ -71,8 +71,11 @@ Arquivos da pasta `tunel`:
 **Instalar o `tunel`**
 
 1. Coloque a pasta em `C:\Tools\tunel` (ou onde preferir) com o `tunel.config.json` deste PC.
-2. Adicione ao PATH: Menu Iniciar → "Editar as variáveis de ambiente do sistema" →
-   **Variáveis de Ambiente** → *Variáveis do usuário* → **Path** → **Novo** → `C:\Tools\tunel`.
+2. Adicione ao PATH: dê duplo clique em **`add_to_path.cmd`** (dentro da pasta `tunel`).
+   Não precisa de administrador; ele também avisa se faltar o `tunel.config.json` ou o CLI do
+   Pangolin. Para desfazer: `add_to_path.cmd -Remove`.
+   (Manualmente: Menu Iniciar → "Editar as variáveis de ambiente do sistema" →
+   **Variáveis de Ambiente** → *Variáveis do usuário* → **Path** → **Novo** → `C:\Tools\tunel`.)
 3. Feche e abra o terminal. Teste: `tunel 8001 meuapp -DryRun`
 
 Se o `pangolin` não estiver no PATH, use no config o caminho com barras duplas, ex.:

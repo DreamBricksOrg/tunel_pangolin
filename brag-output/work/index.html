@@ -76,6 +76,13 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg)}
 .file{display:flex;align-items:center;gap:18px;margin-top:26px;padding:20px 24px;border-radius:14px;background:#0a0d12;border:1px solid var(--line);font:500 24px var(--mono);color:var(--fg)}
 .file i{width:42px;height:52px;border-radius:8px;background:linear-gradient(160deg,#60a5fa,#2563eb);display:block;flex:none}
 
+/* explorer */
+.frow{display:flex;align-items:center;gap:20px;height:64px;margin-bottom:8px;padding:0 22px;border-radius:12px;border:1px solid transparent;font:500 27px var(--mono);color:#cfd8e0}
+.frow i{width:28px;height:34px;border-radius:5px;background:#2a3340;display:block;flex:none}
+.frow.cmdf i{background:linear-gradient(160deg,#60a5fa,#2563eb)}
+.frow.hl{background:#14231d;border-color:var(--grn);color:#fff}
+.frow.hl i{background:linear-gradient(160deg,#34d399,#059669)}
+.frow em{margin-left:auto;font:500 21px var(--sans);color:var(--mut);font-style:normal}
 /* editor */
 .ed{position:absolute;left:140px;top:215px;width:1180px;height:630px;background:#0d1117;border:1px solid var(--line);border-radius:18px;box-shadow:0 30px 90px rgba(0,0,0,.55);overflow:hidden}
 .etab{height:54px;background:#10151c;border-bottom:1px solid var(--line);display:flex;align-items:flex-end}
@@ -95,7 +102,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg)}
     <div style="position:absolute;left:0;right:0;top:50%;transform:translateY(-52%);text-align:center">
       <div class="ln"><span id="i1">Do zero ao</span></div>
       <div class="ln"><span id="i2">link <span class="g" style="font-size:inherit">https</span></span></div>
-      <div id="i3" style="margin-top:26px;font:500 40px var(--mono);color:var(--mut);letter-spacing:.06em">EM 7 PASSOS</div>
+      <div id="i3" style="margin-top:26px;font:500 40px var(--mono);color:var(--mut);letter-spacing:.06em">EM 8 PASSOS</div>
     </div>
   </section>
 
@@ -105,6 +112,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg)}
   <section class="scene" id="s4"><div class="bw" id="b4" style="left:300px;top:200px;width:1320px;height:680px"></div></section>
   <section class="scene" id="s5"><div class="card" id="c5w" style="left:140px;top:250px;width:790px;height:430px"></div><div class="card" id="c5l" style="left:990px;top:250px;width:790px;height:430px"></div><div id="n5" style="position:absolute;left:0;right:0;top:740px;text-align:center"></div></section>
   <section class="scene" id="s6"><div class="ed" id="ed6"></div><div id="x6"></div></section>
+  <section class="scene" id="p"><div class="bw" id="bp" style="left:130px;top:240px;width:900px;height:540px"></div><div class="term" id="tp" style="left:1090px;top:300px;width:700px;height:330px"><div class="tbar"><i></i><i></i><i></i><b>add_to_path</b></div><div class="tbody" id="tpb" style="font-size:26px;line-height:50px"></div></div><div id="pchips" style="position:absolute;left:1090px;top:690px;width:700px"></div></section>
   <section class="scene" id="s7"><div class="term" id="t7" style="left:90px;top:225px;width:1080px;height:520px"><div class="tbar"><i></i><i></i><i></i><b>PowerShell</b></div><div class="tbody" id="t7b" style="font-size:29px;line-height:54px"></div></div><div class="bw" id="b7" style="left:1230px;top:265px;width:600px;height:430px"></div><div id="s7chips" style="position:absolute;left:90px;top:790px;width:1740px"></div></section>
 
   <section class="scene" id="outro">
@@ -112,7 +120,7 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg)}
       <div class="ln"><span id="o1">Pronto.</span></div>
       <div class="ln"><span id="o2" class="g">Localhost com https.</span></div>
     </div>
-    <div id="o3" style="position:absolute;left:0;right:0;top:700px;text-align:center;font:500 44px var(--mono);opacity:0"><span class="mut">github.com/</span>juliobalbino<span class="mut">/</span><b style="font-weight:500;color:var(--grn)">tunel_pangolin</b></div>
+    <div id="o3" style="position:absolute;left:0;right:0;top:700px;text-align:center;font:500 44px var(--mono);opacity:0"><span class="mut">github.com/</span>DreamBricksOrg<span class="mut">/</span><b style="font-weight:500;color:var(--grn)">tunel_pangolin</b></div>
     <div id="o4" style="position:absolute;left:0;right:0;top:790px;text-align:center;font:500 30px var(--mono);color:var(--mut);opacity:0">outro servidor? <span class="amb">tunel -p &lt;perfil&gt; 8001 app</span></div>
   </section>
 
@@ -154,7 +162,8 @@ const steps=[['s1','Baixar o projeto','Clone o repositório do GitHub (ou baixe 
  ['s4','Criar o site','Sites → Add Site → Pangolin Site. Copie o ID e o Secret.'],
  ['s5','Instalar o Pangolin CLI','Instale o CLI do Pangolin no seu sistema.'],
  ['s6','Colocar o secret','Cole o ID e o Secret no tunel.config.json, dentro da pasta tunel.'],
- ['s7','Abrir o túnel','Com o app rodando na porta 8001, abra o túnel.']];
+ ['p','Colocar no PATH','Duplo clique em add_to_path.cmd e o tunel funciona em qualquer pasta.'],
+ ['s7','Abrir o túnel','De qualquer pasta, com o app rodando na porta 8001, abra o túnel.']];
 
 function header(t){
   let cur=-1,o=0;
@@ -259,9 +268,32 @@ function render(t){
     $('x6').innerHTML=(t>=EV.s6_labels?`<div class="lbl" style="left:1370px;top:365px;${lab}">← ID do passo 4</div><div class="lbl" style="left:1370px;top:424px;${lab}">← Secret do passo 4</div>`:'')+
       (t>=EV.s6_warn?`<div class="warn" style="left:1370px;top:540px;width:430px;${fadeS(t,EV.s6_warn,0.35,14)}">⚠ Não compartilhe nem versione esse arquivo.<br><span style="font-weight:400;color:#f5b8b8">Ele já está no .gitignore.</span></div>`:'');
   }
+  // PATH
+  if(scene('p',t)){
+    const files=[['tunel.cmd','cmdf','roda o tunel'],['tunel.ps1','','script'],['tunel.sh','','Linux/macOS'],['tunel.config.json','','ID e Secret'],['add_to_path.cmd','cmdf hl','duplo clique']];
+    const wp=eob(seg(t,EV.p_win,EV.p_win+0.5));
+    const bp=$('bp'); bp.style.opacity=clamp(seg(t,EV.p_win,EV.p_win+0.25)); bp.style.transform=`translateY(${(1-wp)*40}px) scale(${.96+.04*wp})`;
+    const hl=t>=EV.p_hl, click=t>=EV.p_click&&t<EV.p_click+0.22;
+    let rows=files.map((f,i)=>{
+      const on=t>=EV.p_files+i*0.12; const isHl=f[1].includes('hl');
+      const cls='frow '+f[1].replace('hl','')+((isHl&&hl)?' hl':'');
+      const st=fadeS(t,EV.p_files+i*0.12,0.25,10)+((isHl&&click)?';transform:scale(.98);filter:brightness(1.3)':'');
+      return on?`<div class="${cls}" style="${st}"><i></i>${f[0]}<em>${f[2]}</em></div>`:'<div class="frow"></div>';
+    }).join('');
+    // cursor glides to the last row
+    const cp=eo(seg(t,EV.p_cursor,EV.p_hl)); const cx=760-(760-470)*cp, cy=190+(338-190)*cp;
+    const cur=t>=EV.p_cursor?`<svg width="34" height="44" viewBox="0 0 34 44" style="position:absolute;left:${cx}px;top:${cy}px;opacity:${seg(t,EV.p_cursor,EV.p_cursor+0.2)};filter:drop-shadow(0 4px 6px rgba(0,0,0,.6))"><path d="M3 2 L3 34 L12 26 L18 40 L24 37 L18 24 L30 24 Z" fill="#fff" stroke="#000" stroke-width="2"/></svg>`:'';
+    bp.innerHTML=`<div class="bbar"><div class="dots3"><i></i><i></i><i></i></div><div class="url" style="font-family:var(--mono)">C:\\Tools\\tunel</div></div><div class="bpage" style="padding:22px 24px">${rows}${cur}</div>`;
+    const tp=$('tp'); const tpp=eob(seg(t,EV.p_term,EV.p_term+0.5));
+    tp.style.opacity=clamp(seg(t,EV.p_term,EV.p_term+0.25)); tp.style.transform=`translateX(${(1-tpp)*70}px) scale(${.96+.04*tpp})`;
+    $('tpb').innerHTML=termRows([
+      {at:EV.p_out[0],html:`<span class="grn">Adicionado ao PATH:</span>\n<span class="grn">C:\\Tools\\tunel</span>`},
+      {at:EV.p_out[1],html:`<span class="mut">Abra um terminal novo e teste:</span>\n<span class="cya">tunel --help</span>`}],t);
+    $('pchips').innerHTML=t>=EV.p_chip?`<span class="chip" style="${fadeS(t,EV.p_chip,0.3)}">sem administrador</span><span class="chip" style="${fadeS(t,EV.p_chip+0.3,0.3)}">desfazer: <b>add_to_path.cmd -Remove</b></span>`:'';
+  }
   // 7 run
   if(scene('s7',t)){
-    const rows=[{cmd:'s7_cd',until:TY.s7_run.t},{cmd:'s7_run',until:EV.s7_out[0]},
+    const rows=[{cmd:'s7_run',prompt:'PS C:\\meu-app&gt; ',until:EV.s7_out[0]},
       {at:EV.s7_out[0],html:`<span class="mut">Conectando ao Pangolin…</span>`},
       {at:EV.s7_out[1],html:`<span class="grn">https://meuapp.dbpe.com.br</span>\n<span class="mut">   →  http://localhost:8001</span>`},
       {at:EV.s7_out[2],html:`<span class="grn">meuapp: pronto (200)</span>`}];
